@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <title>NS Secure Chat</title>
+  <!-- व्हाट्सएप जैसा कस्टम CSS यहाँ आएगा -->
+</head>
+<body>
+  
+  <div id="chat-box"></div>
+  <input type="text" id="message-input" placeholder="मैसेज टाइप करें...">
+  <button id="send-btn">Send</button>
+
+  <!-- Convex को सीधे ब्राउज़र में लोड करने का तरीका -->
+  <script type="module">
+    import { ConvexClient } from "https://esm.sh/convex/browser";
+
+    // आपका Convex का URL (जो डैशबोर्ड में मिलेगा)
+    const client = new ConvexClient("https://your-convex-url.convex.cloud");
+    
+    // लिंक से रूम आईडी निकालना (जैसे: /chat?room=123)
+    const urlParams = new URLSearchParams(window.location.search);
+    const currentRoom = urlParams.get('room') || 'default-room';
+
+    // 1. रियल-टाइम मैसेज मंगाना (WhatsApp की तरह अपने आप अपडेट होगा)
+    client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
+      document.getElementById("chat-box").innerHTML = messages.map(m => 
+        `<p><b>${m.sender}:</b> ${m.text}</p>`
+      ).join("");
+    });
+
+    // 2. मैसेज भेजना
+    document.getElementById("send-btn").onclick = () => {
+      const text = document.getElementById("message-input").value;
+      client.mutation("messages:sendMessage", { 
+        roomId: currentRoom, 
+        text: text, 
+        sender: "Guest" 
+      });
+      document.getElementById("message-input").value = "";
+    };
+  </script>
+</body>
+</html>
