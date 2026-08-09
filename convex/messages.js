@@ -38,3 +38,25 @@ export const sendMessage = mutation({
     });
   },
 });
+// (आपके पुराने getMessages, generateUploadUrl और sendMessage वाले कोड के ठीक नीचे इसे पेस्ट कर दें)
+
+// नया फंक्शन: एडमिन पैनल के लिए सारे एक्टिव रूम्स की लिस्ट लाना
+export const getActiveRooms = query({
+  handler: async (ctx) => {
+    const messages = await ctx.db.query("messages").order("desc").collect();
+    const rooms = {};
+    
+    // हर रूम का सबसे आखिरी मैसेज ढूँढना
+    for (const msg of messages) {
+      if (!rooms[msg.roomId]) {
+        rooms[msg.roomId] = {
+          roomId: msg.roomId,
+          lastMessage: msg.text || (msg.fileType ? '📷 मीडिया फाइल' : 'नया मैसेज'),
+          timestamp: msg.timestamp
+        };
+      }
+    }
+    // टाइम के हिसाब से लिस्ट को सेट करना (नया मैसेज सबसे ऊपर)
+    return Object.values(rooms).sort((a, b) => b.timestamp - a.timestamp);
+  }
+});
