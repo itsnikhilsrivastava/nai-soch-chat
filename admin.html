@@ -17,12 +17,15 @@
     .room-card { display: flex; padding: 15px; border-bottom: 1px solid #e0e0e0; cursor: pointer; align-items: center; }
     .room-card:hover { background: #f9f9f9; }
     .avatar { width: 45px; height: 45px; background: #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; margin-right: 15px; font-size: 18px; }
-    .room-info { flex: 1; }
+    .room-info { flex: 1; overflow: hidden; }
     .room-name { font-weight: bold; color: #333; font-size: 16px; margin-bottom: 5px; }
-    .last-msg { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
-    .time-box { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    .last-msg { color: #666; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%; }
+    
+    .time-box { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
     .time { font-size: 11px; color: #999; }
-    .delete-btn { color: #ff4444; background: none; border: none; font-size: 16px; cursor: pointer; padding: 5px; }
+    .action-btns { display: flex; gap: 10px; }
+    .share-btn { color: #128c7e; background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
+    .delete-btn { color: #ff4444; background: none; border: none; font-size: 18px; cursor: pointer; padding: 5px; }
 
     #chat-view { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 100; flex-direction: column; }
     #chat-frame { flex: 1; border: none; width: 100%; height: 100%; }
@@ -70,7 +73,6 @@
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
     const client = new ConvexClient(CONVEX_URL);
 
-    // रूम्स लोड करना
     client.onUpdate("messages:getActiveRooms", {}, (rooms) => {
       const roomListDiv = document.getElementById("room-list");
       if(rooms.length === 0) {
@@ -86,18 +88,30 @@
           </div>
           <div class="time-box">
             <div class="time">${new Date(room.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
-            <button class="delete-btn" onclick="deleteRoom(event, '${room.roomId}')" title="रूम डिलीट करें"><i class="fas fa-trash"></i></button>
+            <div class="action-btns">
+              <button class="share-btn" onclick="shareRoom(event, '${room.roomId}')" title="लिंक कॉपी करें"><i class="fas fa-share-alt"></i></button>
+              <button class="delete-btn" onclick="deleteRoom(event, '${room.roomId}')" title="रूम डिलीट करें"><i class="fas fa-trash"></i></button>
+            </div>
           </div>
         </div>
       `).join("");
     });
 
-    // नया रूम बनाना
+    // लिंक शेयर (कॉपी) करने का फंक्शन
+    window.shareRoom = (event, roomId) => {
+      event.stopPropagation();
+      const link = window.location.origin + "/?room=" + roomId;
+      navigator.clipboard.writeText(link).then(() => {
+        alert("चैट रूम का लिंक कॉपी हो गया:\n" + link);
+      }).catch(() => {
+        alert("कॉपी करने के लिए यह लिंक शेयर करें:\n" + link);
+      });
+    };
+
     window.createNewRoom = () => {
       const roomName = prompt("नए रूम का नाम दर्ज करें (बिना स्पेस के):");
       if(roomName && roomName.trim() !== "") {
         const cleanName = roomName.trim().replace(/\s+/g, '-').toLowerCase();
-        // एक सिस्टम मैसेज भेजकर रूम एक्टिवेट करना
         client.mutation("messages:sendMessage", {
           roomId: cleanName,
           text: "चैट रूम तैयार है।",
@@ -107,9 +121,8 @@
       }
     };
 
-    // रूम डिलीट करना
     window.deleteRoom = (event, roomId) => {
-      event.stopPropagation(); // क्लिक को चैट खोलने से रोकना
+      event.stopPropagation();
       if(confirm(`क्या आप वाकई '${roomId}' रूम और इसके सारे मैसेज डिलीट करना चाहते हैं?`)) {
         client.mutation("messages:deleteRoom", { roomId: roomId });
       }
