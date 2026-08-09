@@ -1,12 +1,10 @@
 import { query, mutation } from "./_generated/server";
 
-// 1. मैसेज मंगाने का कोड (फाइल सपोर्ट के साथ)
 export const getMessages = query({
   handler: async (ctx, args) => {
     const messages = await ctx.db.query("messages")
       .filter((q) => q.eq(q.field("roomId"), args.roomId))
       .collect();
-      
     return Promise.all(
       messages.map(async (msg) => {
         let fileUrl = null;
@@ -33,7 +31,17 @@ export const sendMessage = mutation({
       storageId: args.storageId,
       fileType: args.fileType,
     });
-  },
+  }
+});
+
+// सिक्योरिटी चेक: रूम मौजूद है या नहीं
+export const checkRoomExists = query({
+  handler: async (ctx, args) => {
+    const msg = await ctx.db.query("messages")
+      .filter(q => q.eq(q.field("roomId"), args.roomId))
+      .first();
+    return msg !== null; // अगर कम से कम एक मैसेज है, तो रूम असली है
+  }
 });
 
 export const getActiveRooms = query({
@@ -64,9 +72,6 @@ export const deleteRoom = mutation({
   }
 });
 
-// ----------------------------------------------------
-// नया फीचर: टाइपिंग और ऑनलाइन स्टेटस (Presence) का कोड
-// ----------------------------------------------------
 export const updatePresence = mutation({
   handler: async (ctx, args) => {
     const existing = await ctx.db.query("presence")
@@ -95,7 +100,7 @@ export const updatePresence = mutation({
 
 export const getPresence = query({
   handler: async (ctx, args) => {
-    const cutoff = Date.now() - 20000; // 20 सेकंड तक एक्टिव न होने पर ऑफलाइन
+    const cutoff = Date.now() - 20000; 
     return await ctx.db.query("presence")
       .filter(q => q.and(
          q.eq(q.field("roomId"), args.roomId),
