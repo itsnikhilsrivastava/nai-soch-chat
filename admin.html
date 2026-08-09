@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -47,14 +47,14 @@
   <div class="header">
     <h2>Admin Panel</h2>
     <div class="btn-group">
-      <button class="btn btn-new" onclick="createNewRoom()" title="नया रूम बनाएं"><i class="fas fa-plus"></i></button>
-      <button class="btn" onclick="changeAdminName()" title="सपोर्ट एजेंट का नाम बदलें"><i class="fas fa-user-edit"></i></button>
-      <button class="btn" onclick="openWidgetModal()" title="विजेट कोड"><i class="fas fa-code"></i></button>
+      <button class="btn btn-new" onclick="createNewRoom()" title="Create New Room"><i class="fas fa-plus"></i></button>
+      <button class="btn" onclick="changeAdminName()" title="Change Admin Name"><i class="fas fa-user-edit"></i></button>
+      <button class="btn" onclick="openWidgetModal()" title="Get Widget Code"><i class="fas fa-code"></i></button>
     </div>
   </div>
   
   <div id="room-list">
-    <p style="text-align:center; color:#999; margin-top: 20px;">चैट्स लोड हो रहे हैं...</p>
+    <p style="text-align:center; color:#999; margin-top: 20px;">Loading chats...</p>
   </div>
 
   <div id="chat-view">
@@ -68,11 +68,11 @@
   <div id="widget-modal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:#075e54;">Floating Widget Code</h3>
-      <input type="text" id="site-source" placeholder="वेबसाइट का नाम (e.g., Blog, Shop)">
-      <textarea id="embed-code" readonly placeholder="यहाँ कोड जनरेट होगा..."></textarea>
+      <input type="text" id="site-source" placeholder="Website Source (e.g., Blog, Shop)">
+      <textarea id="embed-code" readonly placeholder="Code will be generated here..."></textarea>
       <div class="modal-btns">
-        <button class="generate-btn" onclick="generateWidgetCode()">कोड बनाएं</button>
-        <button class="close-btn" onclick="document.getElementById('widget-modal').style.display='none'">बंद करें</button>
+        <button class="generate-btn" onclick="generateWidgetCode()">Generate Code</button>
+        <button class="close-btn" onclick="document.getElementById('widget-modal').style.display='none'">Close</button>
       </div>
     </div>
   </div>
@@ -86,7 +86,7 @@
     
     let myAdminName = localStorage.getItem('my_admin_name');
     if (!myAdminName) {
-        myAdminName = prompt("कृपया सपोर्ट एजेंट के तौर पर अपना नाम दर्ज करें:", "Nik");
+        myAdminName = prompt("Enter your name to join chats:", "Nik");
         if (!myAdminName || myAdminName.trim() === "") {
             myAdminName = "Live Support Agent";
         }
@@ -94,18 +94,18 @@
     }
 
     window.changeAdminName = () => {
-        const newName = prompt("विजेट चैट में सपोर्ट एजेंट का नाम दर्ज करें:", myAdminName);
+        const newName = prompt("Enter your display name:", myAdminName);
         if (newName && newName.trim() !== "") {
             myAdminName = newName.trim();
             localStorage.setItem('my_admin_name', myAdminName);
-            alert("सपोर्ट एजेंट का नाम अपडेट हो गया है: " + myAdminName);
+            alert("Name updated successfully: " + myAdminName);
         }
     };
 
     client.onUpdate("messages:getActiveRooms", {}, (rooms) => {
       const roomListDiv = document.getElementById("room-list");
       if(rooms.length === 0) {
-        roomListDiv.innerHTML = '<p style="text-align:center; margin-top:20px; color:#888;">अभी कोई एक्टिव चैट नहीं है।</p>';
+        roomListDiv.innerHTML = '<p style="text-align:center; margin-top:20px; color:#888;">No active chats right now.</p>';
         return;
       }
       roomListDiv.innerHTML = rooms.map(room => `
@@ -118,8 +118,8 @@
           <div class="time-box">
             <div class="time">${new Date(room.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
             <div class="action-btns">
-              <button class="share-btn" onclick="shareRoom(event, '${room.roomId}')" title="लिंक कॉपी करें"><i class="fas fa-share-alt"></i></button>
-              <button class="delete-btn" onclick="deleteRoom(event, '${room.roomId}')" title="रूम डिलीट करें"><i class="fas fa-trash"></i></button>
+              <button class="share-btn" onclick="shareRoom(event, '${room.roomId}')" title="Copy Link"><i class="fas fa-share-alt"></i></button>
+              <button class="delete-btn" onclick="deleteRoom(event, '${room.roomId}')" title="Delete Room"><i class="fas fa-trash"></i></button>
             </div>
           </div>
         </div>
@@ -129,54 +129,48 @@
     window.shareRoom = (event, roomId) => {
       event.stopPropagation();
       const link = window.location.origin + "/?room=" + roomId;
-      navigator.clipboard.writeText(link).then(() => { alert("चैट रूम का लिंक कॉपी हो गया!"); });
+      navigator.clipboard.writeText(link).then(() => { alert("Chat link copied!"); });
     };
 
     window.createNewRoom = () => {
-      const roomName = prompt("नए रूम का नाम दर्ज करें (बिना स्पेस के):");
+      const roomName = prompt("Enter new room name (no spaces):");
       if(roomName && roomName.trim() !== "") {
-        const limitStr = prompt("इस रूम में अधिकतम कितने लोग जुड़ सकते हैं? (जैसे: 2, 5)\n(अगर कोई लिमिट नहीं रखनी है तो 0 लिखें या खाली छोड़ दें):");
+        const limitStr = prompt("Max user limit for this room? (e.g., 2, 5)\n(Leave empty for no limit):");
         const limitValue = parseInt(limitStr) || 0;
-        
         const cleanName = roomName.trim().replace(/\s+/g, '-').toLowerCase();
         
         client.mutation("messages:sendMessage", { 
           roomId: cleanName, 
-          text: `चैट रूम तैयार है।${limitValue > 0 ? ` (लिमिट: ${limitValue} लोग)` : ''}`, 
+          text: `Chat room is ready.${limitValue > 0 ? ` (Limit: ${limitValue} users)` : ''}`, 
           sender: "System",
           limit: limitValue
         });
-        openChat(cleanName); // नया रूम बनाने के बाद खोलें
+        openChat(cleanName); 
       }
     };
 
     window.deleteRoom = (event, roomId) => {
       event.stopPropagation();
-      if(confirm(`क्या आप वाकई '${roomId}' रूम और इसके सारे मैसेज डिलीट करना चाहते हैं?`)) {
+      if(confirm(`Are you sure you want to delete room '${roomId}' and all its messages?`)) {
         client.mutation("messages:deleteRoom", { roomId: roomId });
       }
     };
 
     window.openChat = (roomId) => {
-      document.getElementById('active-room-name').innerText = "चैट: " + roomId;
+      document.getElementById('active-room-name').innerText = "Chat: " + roomId;
       
-      // स्मार्ट चेक: क्या यह विजेट वाला रूम है?
       if (roomId.startsWith('w_')) {
-          // विजेट रूम: सपोर्ट एजेंट के तौर पर ऑटो-लॉगिन करें
           localStorage.setItem(`ns_chat_name_${roomId}`, myAdminName);
-          
           if (!agentJoinedRooms.has(roomId)) {
+              // --- केवल सपोर्ट एजेंट जुड़ा है (बिना नाम के) ---
               client.mutation("messages:sendMessage", {
                   roomId: roomId,
-                  text: `👨‍💻 सपोर्ट एजेंट (${myAdminName}) चैट से जुड़ गए हैं।`,
+                  text: `👨‍💻 Live Support Agent has joined the chat.`,
                   sender: "System"
               });
               agentJoinedRooms.add(roomId);
           }
       } 
-      // अगर विजेट रूम नहीं है (जैसे फ्रेंड्स वाला), तो हम कोई लोकल स्टोरेज सेट नहीं करेंगे।
-      // आईफ्रेम खुलेगा और इंडेक्स फाइल आपको नॉर्मल लॉगिन स्क्रीन दिखाएगी।
-
       document.getElementById('chat-frame').src = `/?room=${roomId}`;
       document.getElementById('chat-view').style.display = 'flex';
     };
@@ -204,10 +198,8 @@
 #lsChatBox{ position:fixed; bottom:90px; right:20px; width:350px; height:500px; border:none; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.3); display:none; z-index:99999; background:#fff; }
 @media(max-width:768px){ #lsChatBox{ width:95%; height:80%; right:2.5%; bottom:80px; } }
 </style>
-
 <button id="lsChatBtn">💬</button>
 <iframe id="lsChatBox" src="${siteUrl}/widget.html?source=${encodedSource}"></iframe>
-
 <script>
 const btn = document.getElementById("lsChatBtn");
 const chat = document.getElementById("lsChatBox");
