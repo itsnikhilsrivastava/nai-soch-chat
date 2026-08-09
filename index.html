@@ -33,21 +33,22 @@
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; }
 
-    .chat-container { flex: 1; padding: 15px; padding-bottom: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
+    .chat-container { flex: 1; padding: 15px; padding-bottom: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; scroll-behavior: smooth; }
     .message { max-width: 85%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
     .sender-name { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; display: block; }
     .msg-text { font-size: 15px; line-height: 1.4; color: #111; display: block; }
     
-    /* लिंक का डिज़ाइन */
     .chat-link { color: #027eb5; text-decoration: underline; font-weight: 500; word-break: break-all; }
-    
     .msg-media { max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; cursor: pointer; object-fit: cover; }
     
-    .msg-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 2px; gap: 8px; }
+    .msg-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 2px; gap: 6px; }
     .timestamp { font-size: 10px; color: var(--text-muted); }
-    .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: 12px; opacity: 0.6; }
+    .ticks { font-size: 11px; color: #999; }
+    .ticks.read { color: #34B7F1; } /* Blue Tick Color */
+    
+    .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: 12px; opacity: 0.6; margin-left: 5px; }
     .copy-btn:hover { opacity: 1; color: var(--primary-color); }
     
     .typing-indicator { font-size: 13px; color: var(--secondary-color); font-style: italic; padding: 5px 15px; display: none; background: var(--bg-color); z-index: 5; font-weight: bold; }
@@ -59,7 +60,6 @@
     .send-btn-circle { background-color: var(--secondary-color); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
     .error-toast { display: none; background: #d32f2f; color: white; text-align: center; padding: 10px; position: absolute; top: 0; width: 100%; z-index: 2000; font-size: 14px; }
 
-    /* इमेज व्यूअर का डिज़ाइन */
     #image-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; flex-direction: column; }
     #modal-img { max-width: 95%; max-height: 80%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
     .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
@@ -69,7 +69,6 @@
 
   <div id="error-notice" class="error-toast"></div>
 
-  <!-- फुल स्क्रीन इमेज व्यूअर -->
   <div id="image-modal">
     <span class="close-modal" onclick="closeImageModal()">&times;</span>
     <img id="modal-img" src="">
@@ -122,6 +121,10 @@
     let userName = "";
     let currentRoom = "";
     let typingTimeout = null;
+    let lastMessageCount = 0;
+    
+    // नया मैसेज आने पर पॉप साउंड
+    const notifSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
     const loginScreen = document.getElementById("login-screen");
     const appContainer = document.getElementById("app-container");
@@ -182,12 +185,10 @@
 
     window.handleLoginKeyPress = (e) => { if (e.key === 'Enter') joinBtn.click(); }
 
-    // इनपुट बॉक्स को अपने आप बड़ा करने के लिए
     window.autoResize = (textarea) => {
       textarea.style.height = 'auto';
       textarea.style.height = (textarea.scrollHeight < 100 ? textarea.scrollHeight : 100) + 'px';
       
-      // टाइपिंग सिग्नल
       client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: true });
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
@@ -199,26 +200,17 @@
         return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // एडवांस टेक्स्ट फॉर्मेटिंग (लिंक्स और बोल्ड/इटैलिक)
     function formatMessageText(text) {
         if (!text) return "";
-        let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // XSS से बचाव
-        
-        // लिंक्स को क्लिकेबल बनाना
+        let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
         const urlRegex = /(https?:\/\/[^\s]+)/g;
         safeText = safeText.replace(urlRegex, '<a href="$1" target="_blank" class="chat-link" rel="noopener noreferrer">$1</a>');
-        
-        // बोल्ड (*text*)
         safeText = safeText.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-        // इटैलिक (_text_)
         safeText = safeText.replace(/_(.*?)_/g, '<em>$1</em>');
-        // लाइन ब्रेक
         safeText = safeText.replace(/\n/g, '<br>');
-        
         return safeText;
     }
 
-    // कॉपी करने का फंक्शन
     window.copyText = (btn) => {
         const textToCopy = btn.getAttribute('data-text');
         navigator.clipboard.writeText(textToCopy);
@@ -226,7 +218,6 @@
         setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
     };
 
-    // फुल स्क्रीन फोटो व्यूअर
     window.openImageModal = (src) => {
         document.getElementById('modal-img').src = src;
         document.getElementById('image-modal').style.display = 'flex';
@@ -235,6 +226,17 @@
         document.getElementById('image-modal').style.display = 'none';
     };
 
+    // यह फंक्शन तब कॉल होता है जब यूज़र चैट को देख रहा होता है (ताकि मैसेज रीड हो जाएं)
+    function markAsReadIfFocused() {
+       if(document.hasFocus()) {
+          client.mutation("messages:markMessagesRead", { roomId: currentRoom, user: userName });
+       }
+    }
+    window.addEventListener('focus', markAsReadIfFocused);
+    document.addEventListener('visibilitychange', () => {
+       if (document.visibilityState === 'visible') markAsReadIfFocused();
+    });
+
     function startChat() {
       loginScreen.style.display = "none";
       appContainer.style.display = "flex";
@@ -242,6 +244,20 @@
       try {
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
+          
+          // चेक करें कि क्या नया मैसेज आया है
+          if (messages.length > lastMessageCount) {
+             const lastMsg = messages[messages.length - 1];
+             // अगर मैसेज किसी और ने भेजा है और ऐप अभी-अभी नहीं खुला है
+             if (lastMsg.sender !== userName && lastMessageCount > 0) {
+                 try { notifSound.play(); } catch(e){} // साउंड प्ले करें
+             }
+             lastMessageCount = messages.length;
+             setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
+          }
+
+          // अगर स्क्रीन खुली है, तो मैसेज को तुरंत 'पढ़ा हुआ' मार्क करें
+          markAsReadIfFocused();
         });
 
         client.onUpdate("messages:getPresence", { roomId: currentRoom }, (users) => {
@@ -294,9 +310,18 @@
             }
         }
         
-        // कॉपी बटन का डेटा तैयार करना
         const safeRawText = m.text ? m.text.replace(/"/g, '&quot;') : '';
         const copyBtn = m.text ? `<button class="copy-btn" data-text="${safeRawText}" onclick="copyText(this)" title="कॉपी करें"><i class="fas fa-copy"></i></button>` : '';
+        
+        // ब्लू टिक लॉजिक: अगर मैसेज आपने भेजा है, तो ही टिक दिखेंगे
+        let ticksHTML = "";
+        if (isMe) {
+            if (m.isRead) {
+                ticksHTML = `<span class="ticks read"><i class="fas fa-check-double"></i></span>`;
+            } else {
+                ticksHTML = `<span class="ticks"><i class="fas fa-check"></i></span>`;
+            }
+        }
         
         return `
           <div class="message ${msgClass}">
@@ -305,12 +330,12 @@
             ${m.text ? `<span class="msg-text">${formatMessageText(m.text)}</span>` : ''}
             <div class="msg-footer">
                <span class="timestamp">${formatTime(m.timestamp)}</span>
+               ${ticksHTML}
                ${copyBtn}
             </div>
           </div>
         `;
       }).join("");
-      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     sendBtn.onclick = () => {
@@ -319,13 +344,12 @@
         client.mutation("messages:sendMessage", { roomId: currentRoom, text: text, sender: userName });
         client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
         msgInput.value = "";
-        msgInput.style.height = 'auto'; // बॉक्स वापस छोटा करना
+        msgInput.style.height = 'auto'; 
         msgInput.focus();
       }
     };
 
     window.handleSendKeyPress = (e) => { 
-        // एंटर से सेंड करना, Shift+Enter से नई लाइन बनाना
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendBtn.click(); 
