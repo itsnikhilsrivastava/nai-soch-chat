@@ -81,7 +81,6 @@
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
     const client = new ConvexClient(CONVEX_URL);
     
-    // यह ट्रैक करेगा कि एडमिन ने किस रूम में 'एजेंट जुड़ा' मैसेज भेज दिया है
     let agentJoinedRooms = new Set();
 
     client.onUpdate("messages:getActiveRooms", {}, (rooms) => {
@@ -117,8 +116,19 @@
     window.createNewRoom = () => {
       const roomName = prompt("नए रूम का नाम दर्ज करें (बिना स्पेस के):");
       if(roomName && roomName.trim() !== "") {
+        // नया लिमिट का प्रॉम्प्ट
+        const limitStr = prompt("इस रूम में अधिकतम कितने लोग जुड़ सकते हैं? (जैसे: 2, 5)\n(अगर कोई लिमिट नहीं रखनी है तो 0 लिखें या खाली छोड़ दें):");
+        const limitValue = parseInt(limitStr) || 0;
+        
         const cleanName = roomName.trim().replace(/\s+/g, '-').toLowerCase();
-        client.mutation("messages:sendMessage", { roomId: cleanName, text: "चैट रूम तैयार है।", sender: "System" });
+        
+        // लिमिट को बैकएंड में भेजना
+        client.mutation("messages:sendMessage", { 
+          roomId: cleanName, 
+          text: `चैट रूम तैयार है।${limitValue > 0 ? ` (लिमिट: ${limitValue} लोग)` : ''}`, 
+          sender: "System",
+          limit: limitValue
+        });
         openChat(cleanName);
       }
     };
@@ -136,7 +146,6 @@
       document.getElementById('chat-frame').src = `/?room=${roomId}`;
       document.getElementById('chat-view').style.display = 'flex';
       
-      // सिर्फ एक बार "एजेंट जुड़ा" मैसेज भेजना
       if (!agentJoinedRooms.has(roomId)) {
           client.mutation("messages:sendMessage", {
               roomId: roomId,
