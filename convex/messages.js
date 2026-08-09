@@ -60,3 +60,16 @@ export const getActiveRooms = query({
     return Object.values(rooms).sort((a, b) => b.timestamp - a.timestamp);
   }
 });
+// रूम और उसके सारे मैसेज डिलीट करने का फंक्शन
+export const deleteRoom = mutation({
+  handler: async (ctx, args) => {
+    const messages = await ctx.db.query("messages")
+      .filter((q) => q.eq(q.field("roomId"), args.roomId))
+      .collect();
+      
+    // रूम के सभी मैसेज एक-एक करके डिलीट करना
+    for (const msg of messages) {
+      await ctx.db.delete(msg._id);
+    }
+  }
+});
