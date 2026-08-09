@@ -15,40 +15,17 @@
       --text-muted: #667781;
     }
     
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-      margin: 0; 
-      padding: 0; 
-      background-color: var(--bg-color); 
-      display: flex; 
-      flex-direction: column; 
-      height: 100dvh; /* Mobile viewport fix */
-      width: 100vw;
-      position: fixed; 
-      overflow: hidden; 
-    }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); display: flex; flex-direction: column; height: 100dvh; width: 100vw; position: fixed; overflow: hidden; }
     
-    /* Login Screen */
     #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     .login-box { text-align: center; width: 80%; max-width: 350px; }
     .login-box h2 { color: var(--primary-color); margin-bottom: 20px; }
-    .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; transition: border-color 0.3s; }
+    .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
     .login-box input:focus { border-color: var(--secondary-color); }
-    .login-box button { width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
-    .login-box button:hover { background-color: var(--primary-color); }
-
-    /* Chat App Interface */
-    #app-container { 
-      display: none; 
-      flex-direction: column; 
-      height: 100%; 
-      width: 100%;
-      position: absolute;
-      top: 0;
-      bottom: 0;
-    }
+    .login-box button { width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
     
-    /* Header */
+    #app-container { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; bottom: 0; }
+    
     .header { background-color: var(--primary-color); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
     .header-info { display: flex; align-items: center; gap: 10px; }
     .avatar { width: 40px; height: 40px; background-color: #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; }
@@ -57,18 +34,7 @@
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4CAF50; }
 
-    /* Chat Area */
-    .chat-container { 
-      flex: 1; 
-      padding: 15px; 
-      padding-bottom: 25px; 
-      overflow-y: auto; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px; 
-      background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
-      background-repeat: repeat; 
-    }
+    .chat-container { flex: 1; padding: 15px; padding-bottom: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
     .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
@@ -76,14 +42,14 @@
     .msg-text { font-size: 15px; line-height: 1.4; color: #111; }
     .timestamp { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 4px; display: block; }
     
-    /* Input Area */
+    /* Media CSS for Photos & Videos */
+    .msg-media { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; }
+    
     .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; z-index: 10; }
     .input-wrapper { flex: 1; display: flex; align-items: center; background: white; border-radius: 24px; padding: 0 15px; }
     .input-wrapper input { flex: 1; padding: 12px 0; border: none; outline: none; font-size: 15px; background: transparent; }
     .icon-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; padding: 10px; cursor: pointer; }
     .send-btn-circle { background-color: var(--secondary-color); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
-    
-    /* Error Notice */
     .error-toast { display: none; background: #d32f2f; color: white; text-align: center; padding: 10px; position: absolute; top: 0; width: 100%; z-index: 2000; font-size: 14px; }
   </style>
 </head>
@@ -91,7 +57,6 @@
 
   <div id="error-notice" class="error-toast">Error connecting to server.</div>
 
-  <!-- Login Screen -->
   <div id="login-screen">
     <div class="login-box">
       <h2>NS Live Desk</h2>
@@ -101,7 +66,6 @@
     </div>
   </div>
 
-  <!-- Main Chat Application -->
   <div id="app-container">
     <div class="header">
       <div class="header-info">
@@ -119,13 +83,13 @@
       </div>
     </div>
     
-    <div class="chat-container" id="chat-box">
-       <!-- Messages will appear here -->
-    </div>
+    <div class="chat-container" id="chat-box"></div>
     
     <div class="input-area">
-      <!-- Image feature coming in next update -->
-      <button class="icon-btn" title="Send Photo" onclick="alert('Photo sharing coming soon!')"><i class="fas fa-camera"></i></button>
+      <!-- Hidden file input for Photo/Video -->
+      <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
+      
+      <button class="icon-btn" id="camera-btn" title="Send Media"><i class="fas fa-camera"></i></button>
       <div class="input-wrapper">
         <input type="text" id="message-input" placeholder="मैसेज टाइप करें..." onkeypress="handleSendKeyPress(event)">
       </div>
@@ -136,7 +100,6 @@
   <script type="module">
     import { ConvexClient } from "https://esm.sh/convex/browser";
     
-    // CONVEX CLOUD URL
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
     let client;
     let userName = "";
@@ -153,6 +116,10 @@
     const statusText = document.getElementById("status-text");
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
+    
+    // File Upload Elements
+    const fileInput = document.getElementById("file-input");
+    const cameraBtn = document.getElementById("camera-btn");
 
     function initApp() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -183,13 +150,10 @@
       }
     };
 
-    window.handleLoginKeyPress = (e) => {
-        if (e.key === 'Enter') joinBtn.click();
-    }
+    window.handleLoginKeyPress = (e) => { if (e.key === 'Enter') joinBtn.click(); }
 
     function formatTime(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     function startChat() {
@@ -198,12 +162,10 @@
       
       try {
         client = new ConvexClient(CONVEX_URL);
-        
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
           setOnlineStatus(true);
         });
-
       } catch (e) {
           showError("Connection failed. Check your network.");
           setOnlineStatus(false);
@@ -216,10 +178,20 @@
         const msgClass = isMe ? 'msg-admin' : 'msg-guest';
         const displayName = isMe ? 'You' : m.sender;
         
+        let mediaHTML = "";
+        if (m.fileUrl) {
+            if (m.fileType === 'video') {
+                mediaHTML = `<video class="msg-media" controls src="${m.fileUrl}"></video>`;
+            } else {
+                mediaHTML = `<img class="msg-media" src="${m.fileUrl}" alt="Photo">`;
+            }
+        }
+        
         return `
           <div class="message ${msgClass}">
             <span class="sender-name">${displayName}</span>
-            <span class="msg-text">${m.text}</span>
+            ${mediaHTML}
+            ${m.text ? `<span class="msg-text">${m.text}</span>` : ''}
             <span class="timestamp">${formatTime(m.timestamp)}</span>
           </div>
         `;
@@ -228,24 +200,66 @@
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
+    // Text Message Send
     sendBtn.onclick = () => {
       const text = msgInput.value.trim();
       if (text !== "") {
         client.mutation("messages:sendMessage", { 
-          roomId: currentRoom, 
-          text: text, 
-          sender: userName 
-        }).catch(err => {
-            showError("Failed to send message.");
-        });
+          roomId: currentRoom, text: text, sender: userName 
+        }).catch(() => showError("Failed to send message."));
         msgInput.value = "";
         msgInput.focus();
       }
     };
 
-    window.handleSendKeyPress = (e) => {
-        if (e.key === 'Enter') sendBtn.click();
-    }
+    window.handleSendKeyPress = (e) => { if (e.key === 'Enter') sendBtn.click(); }
+
+    // Media (Photo/Video) Send Logic
+    cameraBtn.onclick = () => fileInput.click();
+    
+    fileInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const isVideo = file.type.startsWith('video/');
+      const fileType = isVideo ? 'video' : 'image';
+      
+      msgInput.placeholder = "मीडिया अपलोड हो रहा है...";
+      msgInput.disabled = true;
+      cameraBtn.disabled = true;
+      
+      try {
+        // 1. Get secure upload URL from Convex
+        const postUrl = await client.mutation("messages:generateUploadUrl");
+        
+        // 2. Upload the actual file
+        const result = await fetch(postUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        
+        const { storageId } = await result.json();
+        
+        // 3. Save message to database with file link
+        await client.mutation("messages:sendMessage", {
+          roomId: currentRoom,
+          text: msgInput.value.trim(), // Optional text caption
+          sender: userName,
+          storageId: storageId,
+          fileType: fileType
+        });
+        
+        msgInput.value = "";
+      } catch (err) {
+        showError("Upload failed! File might be too large.");
+      } finally {
+        msgInput.placeholder = "मैसेज टाइप करें...";
+        msgInput.disabled = false;
+        cameraBtn.disabled = false;
+        fileInput.value = ""; // Reset input
+      }
+    };
 
     function setOnlineStatus(isOnline) {
         if (isOnline) {
@@ -256,7 +270,6 @@
             statusDot.style.backgroundColor = "#9e9e9e";
         }
     }
-    
     window.addEventListener('online', () => setOnlineStatus(true));
     window.addEventListener('offline', () => setOnlineStatus(false));
 
