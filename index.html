@@ -150,9 +150,10 @@
          return;
       }
       
+      let roomInfo = null;
       try {
-        const roomExists = await client.query("messages:checkRoomExists", { roomId: currentRoom });
-        if (!roomExists) {
+        roomInfo = await client.query("messages:checkRoomExists", { roomId: currentRoom });
+        if (!roomInfo.exists) {
            showClosedRoomScreen();
            return;
         }
@@ -161,22 +162,34 @@
          return;
       }
 
-      // --- नया स्मार्ट नाम सिस्टम ---
       if (currentRoom.startsWith('w_')) {
-          // अगर विजेट से आया है तो 'NS Live Support' दिखाएँ
           roomTitle.textContent = "NS Live Support";
       } else {
-          // अगर एडमिन ने बनाया है, तो वही नाम दिखाएँ (और _ या - को स्पेस में बदल दें)
           roomTitle.textContent = currentRoom.replace(/[-_]/g, ' ');
       }
-      // -------------------------------
 
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
+      
+      // चेक करें कि रूम फुल तो नहीं हो गया है
+      const isFull = roomInfo.limit > 0 && roomInfo.joinedUsers.length >= roomInfo.limit;
+
       if (savedName) {
+        // अगर यूजर पहले से जुड़ा हुआ है (नाम सेव है), तो उसे एंट्री दे दो
         userName = savedName;
         startChat();
       } else {
-        loginScreen.style.display = "flex";
+        if (isFull) {
+            // अगर नया यूजर है और लिमिट खत्म हो गई है, तो एरर दिखाओ
+            document.body.innerHTML = `
+              <div style='display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; background-color:#f0f2f5;'>
+                <i class="fas fa-users-slash" style="font-size: 50px; color: #d32f2f; margin-bottom: 20px;"></i>
+                <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>यह चैट रूम फुल हो चुका है</h2>
+                <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">इस रूम में जुड़ने वालों की लिमिट पूरी हो गई है। कृपया एडमिन से संपर्क करें।</p>
+              </div>
+            `;
+        } else {
+            loginScreen.style.display = "flex";
+        }
       }
     }
 
