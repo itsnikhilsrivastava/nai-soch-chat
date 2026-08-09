@@ -38,7 +38,6 @@
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
     
-    /* सिस्टम मैसेज का खास डिज़ाइन */
     .msg-system { align-self: center; background-color: #e1f5fe; color: #0277bd; font-size: 13px; font-weight: bold; padding: 6px 12px; border-radius: 12px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); max-width: 90%; margin: 5px 0; }
     
     .sender-name { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; display: block; }
@@ -91,7 +90,6 @@
       <div class="header-info">
         <div class="avatar" id="room-avatar">NS</div>
         <div class="room-details">
-          <!-- अब यहाँ असली रूम आईडी नहीं दिखेगा, सिक्योरिटी के लिए -->
           <span class="room-name" id="room-title">NS Live Support</span>
           <span class="status-indicator">
             <span class="status-dot" id="status-dot"></span>
@@ -147,14 +145,14 @@
       currentRoom = urlParams.get('room');
       
       if (!currentRoom) {
-         document.body.innerHTML = "<div style='display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px;'><h2 style='color:#d32f2f;'>अमान्य लिंक! कृपया सही चैट लिंक का उपयोग करें।</h2></div>";
+         showClosedRoomScreen();
          return;
       }
       
       try {
         const roomExists = await client.query("messages:checkRoomExists", { roomId: currentRoom });
         if (!roomExists) {
-           document.body.innerHTML = "<div style='display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px;'><h2 style='color:#d32f2f;'>यह चैट रूम मौजूद नहीं है या एडमिन द्वारा बंद कर दिया गया है।</h2></div>";
+           showClosedRoomScreen();
            return;
         }
       } catch(e) {
@@ -170,6 +168,30 @@
         loginScreen.style.display = "flex";
       }
     }
+
+    // नया फंक्शन: जब रूम डिलीट हो जाए तो यह स्क्रीन दिखेगी
+    function showClosedRoomScreen() {
+      document.body.innerHTML = `
+        <div style='display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; background-color:#f0f2f5;'>
+          <i class="fas fa-check-circle" style="font-size: 50px; color: #128c7e; margin-bottom: 20px;"></i>
+          <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>यह सेशन समाप्त हो गया है</h2>
+          <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">एडमिन द्वारा यह चैट बंद कर दी गई है। किसी अन्य सवाल के लिए कृपया नई चैट शुरू करें।</p>
+          <button onclick="startNewSession()" style="background-color:#128c7e; color:white; border:none; padding:12px 25px; border-radius:25px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">नई चैट शुरू करें</button>
+        </div>
+      `;
+    }
+
+    // नया फंक्शन: पुरानी मेमोरी डिलीट करके विजेट को रीसेट करना
+    window.startNewSession = () => {
+       localStorage.removeItem('ns_widget_room');
+       if(currentRoom) localStorage.removeItem(`ns_chat_name_${currentRoom}`);
+       
+       if (window.parent && window.parent !== window) {
+           window.parent.location.reload(); // विजेट को रिफ्रेश करता है
+       } else {
+           window.location.href = '/widget.html';
+       }
+    };
 
     joinBtn.onclick = () => {
       const name = nameInput.value.trim();
@@ -291,7 +313,6 @@
 
     function renderMessages(messages) {
       chatBox.innerHTML = messages.map(m => {
-        // अगर सेंडर "System" है, तो खास अलर्ट बॉक्स दिखाएं
         if (m.sender === "System") {
            return `<div class="msg-system">${formatMessageText(m.text)}</div>`;
         }
