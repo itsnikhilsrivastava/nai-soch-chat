@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -80,10 +80,9 @@
 
   <div id="login-screen">
     <div class="login-box">
-      <!-- लॉगिन स्क्रीन का हेडिंग -->
       <h2 id="login-title">Live Support</h2>
-      <p style="color: #666; margin-bottom: 20px; font-size: 14px;">सुरक्षित चैट रूम में आपका स्वागत है</p>
-      <input type="text" id="username-input" placeholder="अपना नाम दर्ज करें" onkeypress="handleLoginKeyPress(event)">
+      <p style="color: #666; margin-bottom: 20px; font-size: 14px;">Welcome to the secure chat room</p>
+      <input type="text" id="username-input" placeholder="Enter your name" onkeypress="handleLoginKeyPress(event)">
       <button id="join-btn">Join Chat</button>
     </div>
   </div>
@@ -106,13 +105,13 @@
     </div>
     
     <div class="chat-container" id="chat-box"></div>
-    <div id="typing-indicator" class="typing-indicator">कोई टाइप कर रहा है...</div>
+    <div id="typing-indicator" class="typing-indicator">Someone is typing...</div>
     
     <div class="input-area">
       <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
       <button class="icon-btn" id="camera-btn" title="Send Media"><i class="fas fa-camera"></i></button>
       <div class="input-wrapper">
-        <textarea id="message-input" rows="1" placeholder="मैसेज टाइप करें..." oninput="autoResize(this)" onkeypress="handleSendKeyPress(event)"></textarea>
+        <textarea id="message-input" rows="1" placeholder="Type a message..." oninput="autoResize(this)" onkeypress="handleSendKeyPress(event)"></textarea>
       </div>
       <button class="send-btn-circle" id="send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
@@ -163,11 +162,10 @@
            return;
         }
       } catch(e) {
-         showError("सर्वर से कनेक्ट करने में त्रुटि हुई।");
+         showError("Error connecting to the server.");
          return;
       }
 
-      // --- स्मार्ट हेडर और अवतार सिस्टम ---
       if (currentRoom.startsWith('w_')) {
           roomTitle.textContent = "Live Support";
           loginTitle.textContent = "Live Support";
@@ -176,7 +174,7 @@
           const cleanName = currentRoom.replace(/[-_]/g, ' ');
           roomTitle.textContent = cleanName;
           loginTitle.textContent = cleanName;
-          avatarDiv.innerHTML = cleanName.charAt(0).toUpperCase(); // नाम का पहला अक्षर
+          avatarDiv.innerHTML = cleanName.charAt(0).toUpperCase(); 
       }
 
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
@@ -190,8 +188,8 @@
             document.body.innerHTML = `
               <div style='display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; background-color:#f0f2f5;'>
                 <i class="fas fa-users-slash" style="font-size: 50px; color: #d32f2f; margin-bottom: 20px;"></i>
-                <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>यह चैट रूम फुल हो चुका है</h2>
-                <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">इस रूम में जुड़ने वालों की लिमिट पूरी हो गई है। कृपया एडमिन से संपर्क करें।</p>
+                <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>This chat room is full</h2>
+                <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">The user limit for this room has been reached. Please contact the admin.</p>
               </div>
             `;
         } else {
@@ -204,9 +202,9 @@
       document.body.innerHTML = `
         <div style='display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; background-color:#f0f2f5;'>
           <i class="fas fa-check-circle" style="font-size: 50px; color: #128c7e; margin-bottom: 20px;"></i>
-          <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>यह सेशन समाप्त हो गया है</h2>
-          <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">एडमिन द्वारा यह चैट बंद कर दी गई है। किसी अन्य सवाल के लिए कृपया नई चैट शुरू करें।</p>
-          <button onclick="startNewSession()" style="background-color:#128c7e; color:white; border:none; padding:12px 25px; border-radius:25px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">नई चैट शुरू करें</button>
+          <h2 style='color:#333; margin-bottom: 10px; font-size:20px;'>This session has ended</h2>
+          <p style="color:#666; font-size:14px; margin-bottom: 30px; line-height:1.5;">This chat has been closed by the admin. Please start a new chat for any further queries.</p>
+          <button onclick="startNewSession()" style="background-color:#128c7e; color:white; border:none; padding:12px 25px; border-radius:25px; font-size:16px; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">Start New Chat</button>
         </div>
       `;
     }
@@ -229,7 +227,7 @@
         localStorage.setItem(`ns_chat_name_${currentRoom}`, userName);
         startChat();
       } else {
-        alert("कृपया अपना नाम दर्ज करें!");
+        alert("Please enter your name!");
       }
     };
 
@@ -310,16 +308,16 @@
 
           if (otherUsers.length > 0) {
             const names = otherUsers.map(u => u.user).join(", ");
-            statusText.textContent = names + " ऑनलाइन हैं";
+            statusText.textContent = names + " online";
             statusDot.style.backgroundColor = "#4CAF50"; 
           } else {
-            statusText.textContent = "सिर्फ आप ऑनलाइन हैं";
+            statusText.textContent = "Only you are online";
             statusDot.style.backgroundColor = "#9e9e9e"; 
           }
 
           const typers = otherUsers.filter(u => u.isTyping).map(u => u.user);
           if (typers.length > 0) {
-            typingIndicator.textContent = typers.join(", ") + " टाइप कर रहे हैं...";
+            typingIndicator.textContent = typers.join(", ") + " is typing...";
             typingIndicator.style.display = "block";
           } else {
             typingIndicator.style.display = "none";
@@ -360,7 +358,7 @@
         }
         
         const safeRawText = m.text ? m.text.replace(/"/g, '&quot;') : '';
-        const copyBtn = m.text ? `<button class="copy-btn" data-text="${safeRawText}" onclick="copyText(this)" title="कॉपी करें"><i class="fas fa-copy"></i></button>` : '';
+        const copyBtn = m.text ? `<button class="copy-btn" data-text="${safeRawText}" onclick="copyText(this)" title="Copy"><i class="fas fa-copy"></i></button>` : '';
         
         let ticksHTML = "";
         if (isMe) {
@@ -412,7 +410,7 @@
       const isVideo = file.type.startsWith('video/');
       const fileType = isVideo ? 'video' : 'image';
       
-      msgInput.placeholder = "मीडिया अपलोड हो रहा है...";
+      msgInput.placeholder = "Uploading media...";
       msgInput.disabled = true;
       cameraBtn.disabled = true;
       
@@ -427,7 +425,7 @@
       } catch (err) {
         showError("Upload failed! File might be too large.");
       } finally {
-        msgInput.placeholder = "मैसेज टाइप करें...";
+        msgInput.placeholder = "Type a message...";
         msgInput.disabled = false;
         cameraBtn.disabled = false;
         fileInput.value = "";
@@ -441,7 +439,7 @@
     }
     
     window.logout = () => {
-        if(confirm("क्या आप इस चैट रूम से बाहर जाना चाहते हैं?")) {
+        if(confirm("Are you sure you want to leave this chat room?")) {
             client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: false });
             localStorage.removeItem(`ns_chat_name_${currentRoom}`);
             location.reload();
