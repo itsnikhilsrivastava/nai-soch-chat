@@ -48,7 +48,7 @@
     <h2>Admin Panel</h2>
     <div class="btn-group">
       <button class="btn btn-new" onclick="createNewRoom()" title="नया रूम बनाएं"><i class="fas fa-plus"></i></button>
-      <button class="btn" onclick="changeAdminName()" title="अपना नाम बदलें"><i class="fas fa-user-edit"></i></button>
+      <button class="btn" onclick="changeAdminName()" title="सपोर्ट एजेंट का नाम बदलें"><i class="fas fa-user-edit"></i></button>
       <button class="btn" onclick="openWidgetModal()" title="विजेट कोड"><i class="fas fa-code"></i></button>
     </div>
   </div>
@@ -84,10 +84,9 @@
     
     let agentJoinedRooms = new Set();
     
-    // एडमिन का नाम सेट करने का सिस्टम
     let myAdminName = localStorage.getItem('my_admin_name');
     if (!myAdminName) {
-        myAdminName = prompt("कृपया एडमिन के तौर पर अपना नाम दर्ज करें:", "Live Support Agent");
+        myAdminName = prompt("कृपया सपोर्ट एजेंट के तौर पर अपना नाम दर्ज करें:", "Nik");
         if (!myAdminName || myAdminName.trim() === "") {
             myAdminName = "Live Support Agent";
         }
@@ -95,11 +94,11 @@
     }
 
     window.changeAdminName = () => {
-        const newName = prompt("चैट में जुड़ने के लिए अपना नाम दर्ज करें:", myAdminName);
+        const newName = prompt("विजेट चैट में सपोर्ट एजेंट का नाम दर्ज करें:", myAdminName);
         if (newName && newName.trim() !== "") {
             myAdminName = newName.trim();
             localStorage.setItem('my_admin_name', myAdminName);
-            alert("आपका नाम अपडेट हो गया है: " + myAdminName);
+            alert("सपोर्ट एजेंट का नाम अपडेट हो गया है: " + myAdminName);
         }
     };
 
@@ -147,7 +146,7 @@
           sender: "System",
           limit: limitValue
         });
-        openChat(cleanName);
+        openChat(cleanName); // नया रूम बनाने के बाद खोलें
       }
     };
 
@@ -159,21 +158,27 @@
     };
 
     window.openChat = (roomId) => {
-      // एडमिन का सेट किया हुआ नाम यूज़ करें
-      localStorage.setItem(`ns_chat_name_${roomId}`, myAdminName);
-      
       document.getElementById('active-room-name').innerText = "चैट: " + roomId;
+      
+      // स्मार्ट चेक: क्या यह विजेट वाला रूम है?
+      if (roomId.startsWith('w_')) {
+          // विजेट रूम: सपोर्ट एजेंट के तौर पर ऑटो-लॉगिन करें
+          localStorage.setItem(`ns_chat_name_${roomId}`, myAdminName);
+          
+          if (!agentJoinedRooms.has(roomId)) {
+              client.mutation("messages:sendMessage", {
+                  roomId: roomId,
+                  text: `👨‍💻 सपोर्ट एजेंट (${myAdminName}) चैट से जुड़ गए हैं।`,
+                  sender: "System"
+              });
+              agentJoinedRooms.add(roomId);
+          }
+      } 
+      // अगर विजेट रूम नहीं है (जैसे फ्रेंड्स वाला), तो हम कोई लोकल स्टोरेज सेट नहीं करेंगे।
+      // आईफ्रेम खुलेगा और इंडेक्स फाइल आपको नॉर्मल लॉगिन स्क्रीन दिखाएगी।
+
       document.getElementById('chat-frame').src = `/?room=${roomId}`;
       document.getElementById('chat-view').style.display = 'flex';
-      
-      if (!agentJoinedRooms.has(roomId)) {
-          client.mutation("messages:sendMessage", {
-              roomId: roomId,
-              text: `👨‍💻 सपोर्ट एजेंट (${myAdminName}) चैट से जुड़ गए हैं।`,
-              sender: "System"
-          });
-          agentJoinedRooms.add(roomId);
-      }
     };
 
     window.closeChat = () => {
