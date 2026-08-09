@@ -28,8 +28,7 @@
     .header { background-color: var(--primary-color); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
     .header-info { display: flex; align-items: center; gap: 10px; }
     
-    /* अवतार का डिज़ाइन अब टेक्स्ट के बजाय हेडसेट आइकन दिखाएगा */
-    .avatar { width: 40px; height: 40px; background-color: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; }
+    .avatar { width: 40px; height: 40px; background-color: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 18px; text-transform: uppercase; font-weight: bold; }
     
     .room-details { display: flex; flex-direction: column; }
     .room-name { font-size: 16px; font-weight: bold; text-transform: capitalize; }
@@ -81,7 +80,8 @@
 
   <div id="login-screen">
     <div class="login-box">
-      <h2>Live Support</h2>
+      <!-- लॉगिन स्क्रीन का हेडिंग -->
+      <h2 id="login-title">Live Support</h2>
       <p style="color: #666; margin-bottom: 20px; font-size: 14px;">सुरक्षित चैट रूम में आपका स्वागत है</p>
       <input type="text" id="username-input" placeholder="अपना नाम दर्ज करें" onkeypress="handleLoginKeyPress(event)">
       <button id="join-btn">Join Chat</button>
@@ -91,7 +91,7 @@
   <div id="app-container">
     <div class="header">
       <div class="header-info">
-        <div class="avatar" id="room-avatar"><i class="fas fa-headset"></i></div>
+        <div class="avatar" id="room-avatar"></div>
         <div class="room-details">
           <span class="room-name" id="room-title">Loading...</span>
           <span class="status-indicator">
@@ -143,6 +143,8 @@
     const typingIndicator = document.getElementById("typing-indicator");
     const fileInput = document.getElementById("file-input");
     const cameraBtn = document.getElementById("camera-btn");
+    const avatarDiv = document.getElementById("room-avatar");
+    const loginTitle = document.getElementById("login-title");
 
     async function initApp() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -165,14 +167,19 @@
          return;
       }
 
+      // --- स्मार्ट हेडर और अवतार सिस्टम ---
       if (currentRoom.startsWith('w_')) {
           roomTitle.textContent = "Live Support";
+          loginTitle.textContent = "Live Support";
+          avatarDiv.innerHTML = '<i class="fas fa-headset"></i>';
       } else {
-          roomTitle.textContent = currentRoom.replace(/[-_]/g, ' ');
+          const cleanName = currentRoom.replace(/[-_]/g, ' ');
+          roomTitle.textContent = cleanName;
+          loginTitle.textContent = cleanName;
+          avatarDiv.innerHTML = cleanName.charAt(0).toUpperCase(); // नाम का पहला अक्षर
       }
 
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
-      
       const isFull = roomInfo.limit > 0 && roomInfo.joinedUsers.length >= roomInfo.limit;
 
       if (savedName) {
