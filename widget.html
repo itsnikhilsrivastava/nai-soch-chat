@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NS Chat Widget</title>
+  <title>Live Chat Widget</title>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: transparent; overflow: hidden; height: 100vh; }
     .widget-container { display: flex; flex-direction: column; height: 100%; background: white; border-radius: 15px; overflow: hidden; border: 1px solid #ddd; }
@@ -21,7 +21,7 @@
 
   <div class="widget-container">
     <div class="widget-header">
-      NS Live Support
+      Live Support
     </div>
     
     <div id="lead-form">
@@ -54,11 +54,9 @@
       let room = localStorage.getItem('ns_widget_room');
       
       if (!room) {
-        // सिक्योर और रैंडम रूम आईडी बनाना (ताकि कोई कॉपी न कर सके)
         room = 'w_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*1000);
         localStorage.setItem('ns_widget_room', room);
         
-        // सिस्टम मैसेज में एडमिन को यूज़र की जानकारी और सोर्स भेजना
         await client.mutation("messages:sendMessage", {
           roomId: room,
           text: `🚨 नया विजिटर [${source}]:\n👤 नाम: ${name}\n📱 मोबाइल: ${mobile}`,
