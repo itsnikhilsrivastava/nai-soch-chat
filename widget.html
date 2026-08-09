@@ -6,18 +6,14 @@
   <title>NS Chat Widget</title>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: transparent; overflow: hidden; height: 100vh; }
-    
-    /* Widget Box */
     .widget-container { display: flex; flex-direction: column; height: 100%; background: white; border-radius: 15px; overflow: hidden; border: 1px solid #ddd; }
     .widget-header { background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; }
     
-    /* Lead Form */
     #lead-form { padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
     #lead-form h3 { margin-top: 0; color: #333; font-size: 16px; text-align: center; }
     #lead-form input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
     #lead-form button { width: 100%; padding: 12px; background: #128c7e; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
     
-    /* Iframe for chat */
     #chat-frame { display: none; width: 100%; height: 100%; border: none; flex: 1; }
   </style>
 </head>
@@ -52,33 +48,31 @@
         return;
       }
 
-      // चेक करें कि क्या इस यूजर का रूम पहले से बना है
+      const urlParams = new URLSearchParams(window.location.search);
+      const source = urlParams.get('source') || 'Website';
+
       let room = localStorage.getItem('ns_widget_room');
       
       if (!room) {
-        // नया रूम आईडी बनाना (जैसे: 9876543210_Ramesh)
-        room = mobile + "_" + name.replace(/\s+/g, '');
+        // सिक्योर और रैंडम रूम आईडी बनाना (ताकि कोई कॉपी न कर सके)
+        room = 'w_' + Date.now().toString(36) + '_' + Math.floor(Math.random()*1000);
         localStorage.setItem('ns_widget_room', room);
         
-        // एडमिन को अलर्ट मैसेज भेजना कि नया विजिटर आया है
+        // सिस्टम मैसेज में एडमिन को यूज़र की जानकारी और सोर्स भेजना
         await client.mutation("messages:sendMessage", {
           roomId: room,
-          text: `🚨 नया विजिटर: नाम - ${name}, मोबाइल - ${mobile}`,
+          text: `🚨 नया विजिटर [${source}]:\n👤 नाम: ${name}\n📱 मोबाइल: ${mobile}`,
           sender: "System"
         });
       }
 
-      // चैट के लिए नाम सेव करना
       localStorage.setItem(`ns_chat_name_${room}`, name);
-
-      // फॉर्म को छिपाना और चैट बॉक्स को खोलना
       document.getElementById('lead-form').style.display = 'none';
       const chatFrame = document.getElementById('chat-frame');
       chatFrame.src = `/?room=${room}`;
       chatFrame.style.display = 'block';
     };
 
-    // अगर पहले से जानकारी भरी है, तो सीधे चैट खोलें
     window.onload = () => {
       const existingRoom = localStorage.getItem('ns_widget_room');
       if(existingRoom) {
