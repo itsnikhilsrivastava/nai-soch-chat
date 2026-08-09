@@ -30,17 +30,34 @@ export const sendMessage = mutation({
       timestamp: Date.now(),
       storageId: args.storageId,
       fileType: args.fileType,
+      isRead: false, // नया: डिफ़ॉल्ट रूप से मैसेज 'बिना पढ़ा' होगा
     });
   }
 });
 
-// सिक्योरिटी चेक: रूम मौजूद है या नहीं
+// नया फंक्शन: मैसेज को 'पढ़ा हुआ' (Read/Blue Tick) मार्क करना
+export const markMessagesRead = mutation({
+  handler: async (ctx, args) => {
+    const unreadMessages = await ctx.db.query("messages")
+      .filter(q => q.and(
+         q.eq(q.field("roomId"), args.roomId),
+         q.neq(q.field("sender"), args.user),
+         q.neq(q.field("isRead"), true)
+      ))
+      .collect();
+
+    for (const msg of unreadMessages) {
+      await ctx.db.patch(msg._id, { isRead: true });
+    }
+  }
+});
+
 export const checkRoomExists = query({
   handler: async (ctx, args) => {
     const msg = await ctx.db.query("messages")
       .filter(q => q.eq(q.field("roomId"), args.roomId))
       .first();
-    return msg !== null; // अगर कम से कम एक मैसेज है, तो रूम असली है
+    return msg !== null;
   }
 });
 
