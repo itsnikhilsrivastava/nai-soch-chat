@@ -32,9 +32,9 @@
     .room-details { display: flex; flex-direction: column; }
     .room-name { font-size: 16px; font-weight: bold; }
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4CAF50; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; } /* डिफ़ॉल्ट ग्रे */
 
-    .chat-container { flex: 1; padding: 15px; padding-bottom: 25px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
+    .chat-container { flex: 1; padding: 15px; padding-bottom: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
     .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
@@ -42,8 +42,10 @@
     .msg-text { font-size: 15px; line-height: 1.4; color: #111; }
     .timestamp { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 4px; display: block; }
     
-    /* Media CSS for Photos & Videos */
     .msg-media { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; }
+    
+    /* टाइपिंग इंडिकेटर CSS */
+    .typing-indicator { font-size: 13px; color: var(--secondary-color); font-style: italic; padding: 5px 15px; display: none; background: var(--bg-color); z-index: 5; font-weight: bold; }
     
     .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; z-index: 10; }
     .input-wrapper { flex: 1; display: flex; align-items: center; background: white; border-radius: 24px; padding: 0 15px; }
@@ -85,10 +87,11 @@
     
     <div class="chat-container" id="chat-box"></div>
     
+    <!-- टाइपिंग इंडिकेटर यहाँ दिखेगा -->
+    <div id="typing-indicator" class="typing-indicator">कोई टाइप कर रहा है...</div>
+    
     <div class="input-area">
-      <!-- Hidden file input for Photo/Video -->
       <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
-      
       <button class="icon-btn" id="camera-btn" title="Send Media"><i class="fas fa-camera"></i></button>
       <div class="input-wrapper">
         <input type="text" id="message-input" placeholder="मैसेज टाइप करें..." onkeypress="handleSendKeyPress(event)">
@@ -104,6 +107,7 @@
     let client;
     let userName = "";
     let currentRoom = "";
+    let typingTimeout = null;
 
     const loginScreen = document.getElementById("login-screen");
     const appContainer = document.getElementById("app-container");
@@ -116,8 +120,8 @@
     const statusText = document.getElementById("status-text");
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
+    const typingIndicator = document.getElementById("typing-indicator");
     
-    // File Upload Elements
     const fileInput = document.getElementById("file-input");
     const cameraBtn = document.getElementById("camera-btn");
 
@@ -162,15 +166,62 @@
       
       try {
         client = new ConvexClient(CONVEX_URL);
+        
+        // 1. मैसेज मंगाना
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
-          setOnlineStatus(true);
         });
+
+        // 2. ऑनलाइन स्टेटस और टाइपिंग मंगाना
+        client.onUpdate("messages:getPresence", { roomId: currentRoom }, (users) => {
+          // खुद को हटाकर बाकी यूज़र्स की लिस्ट बनाना
+          const otherUsers = users.filter(u => u.user !== userName);
+
+          // ऑनलाइन स्टेटस अपडेट करना (नाम के साथ)
+          if (otherUsers.length > 0) {
+            const names = otherUsers.map(u => u.user).join(", ");
+            statusText.textContent = names + " ऑनलाइन हैं";
+            statusDot.style.backgroundColor = "#4CAF50"; // हरा रंग
+          } else {
+            statusText.textContent = "सिर्फ आप ऑनलाइन हैं";
+            statusDot.style.backgroundColor = "#9e9e9e"; // ग्रे रंग
+          }
+
+          // टाइपिंग इंडिकेटर अपडेट करना
+          const typers = otherUsers.filter(u => u.isTyping).map(u => u.user);
+          if (typers.length > 0) {
+            typingIndicator.textContent = typers.join(", ") + " टाइप कर रहे हैं...";
+            typingIndicator.style.display = "block";
+          } else {
+            typingIndicator.style.display = "none";
+          }
+        });
+
+        // 3. खुद को ऑनलाइन दिखाना (Heartbeat)
+        client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: true });
+        setInterval(() => {
+          client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: true });
+        }, 10000); // हर 10 सेकंड में सिग्नल भेजना
+
+        // ऐप बंद करने पर ऑफलाइन होना
+        window.addEventListener('beforeunload', () => {
+          client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: false });
+        });
+
       } catch (e) {
           showError("Connection failed. Check your network.");
-          setOnlineStatus(false);
       }
     }
+
+    // टाइपिंग करने पर सिग्नल भेजना
+    msgInput.addEventListener('input', () => {
+      client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: true });
+      
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
+      }, 2000); // 2 सेकंड तक टाइप न करने पर टाइपिंग बंद
+    });
 
     function renderMessages(messages) {
       chatBox.innerHTML = messages.map(m => {
@@ -196,17 +247,15 @@
           </div>
         `;
       }).join("");
-      
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Text Message Send
     sendBtn.onclick = () => {
       const text = msgInput.value.trim();
       if (text !== "") {
-        client.mutation("messages:sendMessage", { 
-          roomId: currentRoom, text: text, sender: userName 
-        }).catch(() => showError("Failed to send message."));
+        client.mutation("messages:sendMessage", { roomId: currentRoom, text: text, sender: userName });
+        // मैसेज भेजते ही टाइपिंग बंद करना
+        client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
         msgInput.value = "";
         msgInput.focus();
       }
@@ -214,9 +263,7 @@
 
     window.handleSendKeyPress = (e) => { if (e.key === 'Enter') sendBtn.click(); }
 
-    // Media (Photo/Video) Send Logic
     cameraBtn.onclick = () => fileInput.click();
-    
     fileInput.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -229,27 +276,17 @@
       cameraBtn.disabled = true;
       
       try {
-        // 1. Get secure upload URL from Convex
         const postUrl = await client.mutation("messages:generateUploadUrl");
-        
-        // 2. Upload the actual file
         const result = await fetch(postUrl, {
           method: "POST",
           headers: { "Content-Type": file.type },
           body: file,
         });
-        
         const { storageId } = await result.json();
         
-        // 3. Save message to database with file link
         await client.mutation("messages:sendMessage", {
-          roomId: currentRoom,
-          text: msgInput.value.trim(), // Optional text caption
-          sender: userName,
-          storageId: storageId,
-          fileType: fileType
+          roomId: currentRoom, text: msgInput.value.trim(), sender: userName, storageId: storageId, fileType: fileType
         });
-        
         msgInput.value = "";
       } catch (err) {
         showError("Upload failed! File might be too large.");
@@ -257,21 +294,9 @@
         msgInput.placeholder = "मैसेज टाइप करें...";
         msgInput.disabled = false;
         cameraBtn.disabled = false;
-        fileInput.value = ""; // Reset input
+        fileInput.value = "";
       }
     };
-
-    function setOnlineStatus(isOnline) {
-        if (isOnline) {
-            statusText.textContent = "Online";
-            statusDot.style.backgroundColor = "#4CAF50";
-        } else {
-            statusText.textContent = "Offline";
-            statusDot.style.backgroundColor = "#9e9e9e";
-        }
-    }
-    window.addEventListener('online', () => setOnlineStatus(true));
-    window.addEventListener('offline', () => setOnlineStatus(false));
 
     function showError(msg) {
         errorNotice.textContent = msg;
@@ -281,6 +306,7 @@
     
     window.logout = () => {
         if(confirm("क्या आप इस चैट रूम से बाहर जाना चाहते हैं?")) {
+            client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: false });
             localStorage.removeItem(`ns_chat_name_${currentRoom}`);
             location.reload();
         }
