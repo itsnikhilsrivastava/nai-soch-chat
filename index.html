@@ -37,6 +37,10 @@
     .message { max-width: 85%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
+    
+    /* सिस्टम मैसेज का खास डिज़ाइन */
+    .msg-system { align-self: center; background-color: #e1f5fe; color: #0277bd; font-size: 13px; font-weight: bold; padding: 6px 12px; border-radius: 12px; text-align: center; box-shadow: 0 1px 2px rgba(0,0,0,0.1); max-width: 90%; margin: 5px 0; }
+    
     .sender-name { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; display: block; }
     .msg-text { font-size: 15px; line-height: 1.4; color: #111; display: block; }
     
@@ -46,7 +50,7 @@
     .msg-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 2px; gap: 6px; }
     .timestamp { font-size: 10px; color: var(--text-muted); }
     .ticks { font-size: 11px; color: #999; }
-    .ticks.read { color: #34B7F1; } /* Blue Tick Color */
+    .ticks.read { color: #34B7F1; } 
     
     .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: 12px; opacity: 0.6; margin-left: 5px; }
     .copy-btn:hover { opacity: 1; color: var(--primary-color); }
@@ -68,7 +72,6 @@
 <body>
 
   <div id="error-notice" class="error-toast"></div>
-
   <div id="image-modal">
     <span class="close-modal" onclick="closeImageModal()">&times;</span>
     <img id="modal-img" src="">
@@ -88,7 +91,8 @@
       <div class="header-info">
         <div class="avatar" id="room-avatar">NS</div>
         <div class="room-details">
-          <span class="room-name" id="room-title">Loading...</span>
+          <!-- अब यहाँ असली रूम आईडी नहीं दिखेगा, सिक्योरिटी के लिए -->
+          <span class="room-name" id="room-title">NS Live Support</span>
           <span class="status-indicator">
             <span class="status-dot" id="status-dot"></span>
             <span id="status-text">Connecting...</span>
@@ -122,8 +126,6 @@
     let currentRoom = "";
     let typingTimeout = null;
     let lastMessageCount = 0;
-    
-    // नया मैसेज आने पर पॉप साउंड
     const notifSound = new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg");
 
     const loginScreen = document.getElementById("login-screen");
@@ -133,7 +135,6 @@
     const chatBox = document.getElementById("chat-box");
     const msgInput = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
-    const roomTitle = document.getElementById("room-title");
     const statusText = document.getElementById("status-text");
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
@@ -161,8 +162,6 @@
          return;
       }
 
-      roomTitle.textContent = `Room: ${currentRoom}`;
-      
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
       if (savedName) {
         userName = savedName;
@@ -226,7 +225,6 @@
         document.getElementById('image-modal').style.display = 'none';
     };
 
-    // यह फंक्शन तब कॉल होता है जब यूज़र चैट को देख रहा होता है (ताकि मैसेज रीड हो जाएं)
     function markAsReadIfFocused() {
        if(document.hasFocus()) {
           client.mutation("messages:markMessagesRead", { roomId: currentRoom, user: userName });
@@ -245,18 +243,14 @@
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
           
-          // चेक करें कि क्या नया मैसेज आया है
           if (messages.length > lastMessageCount) {
              const lastMsg = messages[messages.length - 1];
-             // अगर मैसेज किसी और ने भेजा है और ऐप अभी-अभी नहीं खुला है
              if (lastMsg.sender !== userName && lastMessageCount > 0) {
-                 try { notifSound.play(); } catch(e){} // साउंड प्ले करें
+                 try { notifSound.play(); } catch(e){} 
              }
              lastMessageCount = messages.length;
              setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 100);
           }
-
-          // अगर स्क्रीन खुली है, तो मैसेज को तुरंत 'पढ़ा हुआ' मार्क करें
           markAsReadIfFocused();
         });
 
@@ -297,6 +291,11 @@
 
     function renderMessages(messages) {
       chatBox.innerHTML = messages.map(m => {
+        // अगर सेंडर "System" है, तो खास अलर्ट बॉक्स दिखाएं
+        if (m.sender === "System") {
+           return `<div class="msg-system">${formatMessageText(m.text)}</div>`;
+        }
+
         const isMe = m.sender === userName;
         const msgClass = isMe ? 'msg-admin' : 'msg-guest';
         const displayName = isMe ? 'You' : m.sender;
@@ -313,7 +312,6 @@
         const safeRawText = m.text ? m.text.replace(/"/g, '&quot;') : '';
         const copyBtn = m.text ? `<button class="copy-btn" data-text="${safeRawText}" onclick="copyText(this)" title="कॉपी करें"><i class="fas fa-copy"></i></button>` : '';
         
-        // ब्लू टिक लॉजिक: अगर मैसेज आपने भेजा है, तो ही टिक दिखेंगे
         let ticksHTML = "";
         if (isMe) {
             if (m.isRead) {
