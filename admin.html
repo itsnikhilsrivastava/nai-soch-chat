@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>NS Admin Dashboard</title>
+  <title>Admin Dashboard</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     body { font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f0f2f5; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
@@ -45,10 +45,11 @@
 <body>
 
   <div class="header">
-    <h2>NS Admin Panel</h2>
+    <h2>Admin Panel</h2>
     <div class="btn-group">
-      <button class="btn btn-new" onclick="createNewRoom()"><i class="fas fa-plus"></i></button>
-      <button class="btn" onclick="openWidgetModal()"><i class="fas fa-code"></i></button>
+      <button class="btn btn-new" onclick="createNewRoom()" title="नया रूम बनाएं"><i class="fas fa-plus"></i></button>
+      <button class="btn" onclick="changeAdminName()" title="अपना नाम बदलें"><i class="fas fa-user-edit"></i></button>
+      <button class="btn" onclick="openWidgetModal()" title="विजेट कोड"><i class="fas fa-code"></i></button>
     </div>
   </div>
   
@@ -67,7 +68,7 @@
   <div id="widget-modal">
     <div class="modal-content">
       <h3 style="margin-top:0; color:#075e54;">Floating Widget Code</h3>
-      <input type="text" id="site-source" placeholder="वेबसाइट का नाम (e.g., NS NOW, Blogger)">
+      <input type="text" id="site-source" placeholder="वेबसाइट का नाम (e.g., Blog, Shop)">
       <textarea id="embed-code" readonly placeholder="यहाँ कोड जनरेट होगा..."></textarea>
       <div class="modal-btns">
         <button class="generate-btn" onclick="generateWidgetCode()">कोड बनाएं</button>
@@ -82,6 +83,25 @@
     const client = new ConvexClient(CONVEX_URL);
     
     let agentJoinedRooms = new Set();
+    
+    // एडमिन का नाम सेट करने का सिस्टम
+    let myAdminName = localStorage.getItem('my_admin_name');
+    if (!myAdminName) {
+        myAdminName = prompt("कृपया एडमिन के तौर पर अपना नाम दर्ज करें:", "Live Support Agent");
+        if (!myAdminName || myAdminName.trim() === "") {
+            myAdminName = "Live Support Agent";
+        }
+        localStorage.setItem('my_admin_name', myAdminName);
+    }
+
+    window.changeAdminName = () => {
+        const newName = prompt("चैट में जुड़ने के लिए अपना नाम दर्ज करें:", myAdminName);
+        if (newName && newName.trim() !== "") {
+            myAdminName = newName.trim();
+            localStorage.setItem('my_admin_name', myAdminName);
+            alert("आपका नाम अपडेट हो गया है: " + myAdminName);
+        }
+    };
 
     client.onUpdate("messages:getActiveRooms", {}, (rooms) => {
       const roomListDiv = document.getElementById("room-list");
@@ -116,13 +136,11 @@
     window.createNewRoom = () => {
       const roomName = prompt("नए रूम का नाम दर्ज करें (बिना स्पेस के):");
       if(roomName && roomName.trim() !== "") {
-        // नया लिमिट का प्रॉम्प्ट
         const limitStr = prompt("इस रूम में अधिकतम कितने लोग जुड़ सकते हैं? (जैसे: 2, 5)\n(अगर कोई लिमिट नहीं रखनी है तो 0 लिखें या खाली छोड़ दें):");
         const limitValue = parseInt(limitStr) || 0;
         
         const cleanName = roomName.trim().replace(/\s+/g, '-').toLowerCase();
         
-        // लिमिट को बैकएंड में भेजना
         client.mutation("messages:sendMessage", { 
           roomId: cleanName, 
           text: `चैट रूम तैयार है।${limitValue > 0 ? ` (लिमिट: ${limitValue} लोग)` : ''}`, 
@@ -141,7 +159,9 @@
     };
 
     window.openChat = (roomId) => {
-      localStorage.setItem(`ns_chat_name_${roomId}`, "NS Admin");
+      // एडमिन का सेट किया हुआ नाम यूज़ करें
+      localStorage.setItem(`ns_chat_name_${roomId}`, myAdminName);
+      
       document.getElementById('active-room-name').innerText = "चैट: " + roomId;
       document.getElementById('chat-frame').src = `/?room=${roomId}`;
       document.getElementById('chat-view').style.display = 'flex';
@@ -149,7 +169,7 @@
       if (!agentJoinedRooms.has(roomId)) {
           client.mutation("messages:sendMessage", {
               roomId: roomId,
-              text: "👨‍💻 सपोर्ट एजेंट (NS Admin) चैट से जुड़ गए हैं।",
+              text: `👨‍💻 सपोर्ट एजेंट (${myAdminName}) चैट से जुड़ गए हैं।`,
               sender: "System"
           });
           agentJoinedRooms.add(roomId);
@@ -173,19 +193,19 @@
       const encodedSource = encodeURIComponent(source);
       
       const code = `
-<!-- NS Live Chat Floating Button -->
+<!-- Live Chat Floating Button -->
 <style>
-#nsChatBtn{ position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:#075e54; color:#fff; font-size:28px; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.3); z-index:99999; display:flex; align-items:center; justify-content:center; }
-#nsChatBox{ position:fixed; bottom:90px; right:20px; width:350px; height:500px; border:none; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.3); display:none; z-index:99999; background:#fff; }
-@media(max-width:768px){ #nsChatBox{ width:95%; height:80%; right:2.5%; bottom:80px; } }
+#lsChatBtn{ position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:#075e54; color:#fff; font-size:28px; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.3); z-index:99999; display:flex; align-items:center; justify-content:center; }
+#lsChatBox{ position:fixed; bottom:90px; right:20px; width:350px; height:500px; border:none; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.3); display:none; z-index:99999; background:#fff; }
+@media(max-width:768px){ #lsChatBox{ width:95%; height:80%; right:2.5%; bottom:80px; } }
 </style>
 
-<button id="nsChatBtn">💬</button>
-<iframe id="nsChatBox" src="${siteUrl}/widget.html?source=${encodedSource}"></iframe>
+<button id="lsChatBtn">💬</button>
+<iframe id="lsChatBox" src="${siteUrl}/widget.html?source=${encodedSource}"></iframe>
 
 <script>
-const btn = document.getElementById("nsChatBtn");
-const chat = document.getElementById("nsChatBox");
+const btn = document.getElementById("lsChatBtn");
+const chat = document.getElementById("lsChatBox");
 btn.onclick = function(){
   if(chat.style.display==="block"){
     chat.style.display="none";
