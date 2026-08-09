@@ -15,7 +15,18 @@
       --text-muted: #667781;
     }
     
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 0; 
+      background-color: var(--bg-color); 
+      display: flex; 
+      flex-direction: column; 
+      height: 100dvh; /* Mobile viewport fix */
+      width: 100vw;
+      position: fixed; 
+      overflow: hidden; 
+    }
     
     /* Login Screen */
     #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
@@ -27,19 +38,37 @@
     .login-box button:hover { background-color: var(--primary-color); }
 
     /* Chat App Interface */
-    #app-container { display: none; flex-direction: column; height: 100%; }
+    #app-container { 
+      display: none; 
+      flex-direction: column; 
+      height: 100%; 
+      width: 100%;
+      position: absolute;
+      top: 0;
+      bottom: 0;
+    }
     
     /* Header */
-    .header { background-color: var(--primary-color); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .header { background-color: var(--primary-color); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
     .header-info { display: flex; align-items: center; gap: 10px; }
     .avatar { width: 40px; height: 40px; background-color: #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; }
     .room-details { display: flex; flex-direction: column; }
     .room-name { font-size: 16px; font-weight: bold; }
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4CAF50; } /* Online by default */
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #4CAF50; }
 
     /* Chat Area */
-    .chat-container { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
+    .chat-container { 
+      flex: 1; 
+      padding: 15px; 
+      padding-bottom: 25px; 
+      overflow-y: auto; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 10px; 
+      background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); 
+      background-repeat: repeat; 
+    }
     .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
@@ -48,11 +77,11 @@
     .timestamp { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 4px; display: block; }
     
     /* Input Area */
-    .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; }
+    .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; z-index: 10; }
     .input-wrapper { flex: 1; display: flex; align-items: center; background: white; border-radius: 24px; padding: 0 15px; }
     .input-wrapper input { flex: 1; padding: 12px 0; border: none; outline: none; font-size: 15px; background: transparent; }
     .icon-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; padding: 10px; cursor: pointer; }
-    .send-btn-circle { background-color: var(--secondary-color); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .send-btn-circle { background-color: var(--secondary-color); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
     
     /* Error Notice */
     .error-toast { display: none; background: #d32f2f; color: white; text-align: center; padding: 10px; position: absolute; top: 0; width: 100%; z-index: 2000; font-size: 14px; }
@@ -113,7 +142,6 @@
     let userName = "";
     let currentRoom = "";
 
-    // Elements
     const loginScreen = document.getElementById("login-screen");
     const appContainer = document.getElementById("app-container");
     const nameInput = document.getElementById("username-input");
@@ -126,13 +154,10 @@
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
 
-    // Initialize App
     function initApp() {
-      // 1. Get Room from URL Parameters
       const urlParams = new URLSearchParams(window.location.search);
       currentRoom = urlParams.get('room');
       
-      // If no room is specified, show error or assign default
       if (!currentRoom) {
          currentRoom = 'general';
          window.history.replaceState({}, '', `?room=${currentRoom}`);
@@ -140,7 +165,6 @@
       
       roomTitle.textContent = `Room: ${currentRoom}`;
       
-      // 2. Check if user is already logged in for this specific room
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
       if (savedName) {
         userName = savedName;
@@ -148,7 +172,6 @@
       }
     }
 
-    // Login Logic
     joinBtn.onclick = () => {
       const name = nameInput.value.trim();
       if (name) {
@@ -164,13 +187,11 @@
         if (e.key === 'Enter') joinBtn.click();
     }
 
-    // Utility: Format Timestamp (e.g., "10:30 AM")
     function formatTime(timestamp) {
         const date = new Date(timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
-    // Start Chat Application
     function startChat() {
       loginScreen.style.display = "none";
       appContainer.style.display = "flex";
@@ -178,7 +199,6 @@
       try {
         client = new ConvexClient(CONVEX_URL);
         
-        // Setup Real-time listener
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
           setOnlineStatus(true);
@@ -190,13 +210,10 @@
       }
     }
 
-    // Render Messages to DOM
     function renderMessages(messages) {
       chatBox.innerHTML = messages.map(m => {
-        // Determine message style
         const isMe = m.sender === userName;
         const msgClass = isMe ? 'msg-admin' : 'msg-guest';
-        // Add "You" text if it's the sender
         const displayName = isMe ? 'You' : m.sender;
         
         return `
@@ -208,11 +225,9 @@
         `;
       }).join("");
       
-      // Auto-scroll to bottom
       chatBox.scrollTop = chatBox.scrollHeight;
     }
 
-    // Send Message Logic
     sendBtn.onclick = () => {
       const text = msgInput.value.trim();
       if (text !== "") {
@@ -232,7 +247,6 @@
         if (e.key === 'Enter') sendBtn.click();
     }
 
-    // Status Management
     function setOnlineStatus(isOnline) {
         if (isOnline) {
             statusText.textContent = "Online";
@@ -243,7 +257,6 @@
         }
     }
     
-    // Simulate connection checking
     window.addEventListener('online', () => setOnlineStatus(true));
     window.addEventListener('offline', () => setOnlineStatus(false));
 
@@ -253,7 +266,6 @@
         setTimeout(() => { errorNotice.style.display = "none"; }, 3000);
     }
     
-    // Logout function
     window.logout = () => {
         if(confirm("क्या आप इस चैट रूम से बाहर जाना चाहते हैं?")) {
             localStorage.removeItem(`ns_chat_name_${currentRoom}`);
@@ -261,7 +273,6 @@
         }
     }
 
-    // Run initialization
     initApp();
   </script>
 </body>
