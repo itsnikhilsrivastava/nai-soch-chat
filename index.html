@@ -27,9 +27,9 @@
     
     .header { background-color: var(--primary-color); color: white; padding: 12px 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 1px 3px rgba(0,0,0,0.2); z-index: 10; }
     .header-info { display: flex; align-items: center; gap: 10px; }
-    .avatar { width: 40px; height: 40px; background-color: #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; }
+    .avatar { width: 40px; height: 40px; background-color: #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; color: white; text-transform: uppercase; }
     .room-details { display: flex; flex-direction: column; }
-    .room-name { font-size: 16px; font-weight: bold; }
+    .room-name { font-size: 16px; font-weight: bold; text-transform: capitalize; }
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; }
 
@@ -90,7 +90,7 @@
       <div class="header-info">
         <div class="avatar" id="room-avatar">NS</div>
         <div class="room-details">
-          <span class="room-name" id="room-title">NS Live Support</span>
+          <span class="room-name" id="room-title">Loading...</span>
           <span class="status-indicator">
             <span class="status-dot" id="status-dot"></span>
             <span id="status-text">Connecting...</span>
@@ -133,6 +133,7 @@
     const chatBox = document.getElementById("chat-box");
     const msgInput = document.getElementById("message-input");
     const sendBtn = document.getElementById("send-btn");
+    const roomTitle = document.getElementById("room-title");
     const statusText = document.getElementById("status-text");
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
@@ -160,6 +161,16 @@
          return;
       }
 
+      // --- नया स्मार्ट नाम सिस्टम ---
+      if (currentRoom.startsWith('w_')) {
+          // अगर विजेट से आया है तो 'NS Live Support' दिखाएँ
+          roomTitle.textContent = "NS Live Support";
+      } else {
+          // अगर एडमिन ने बनाया है, तो वही नाम दिखाएँ (और _ या - को स्पेस में बदल दें)
+          roomTitle.textContent = currentRoom.replace(/[-_]/g, ' ');
+      }
+      // -------------------------------
+
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
       if (savedName) {
         userName = savedName;
@@ -169,7 +180,6 @@
       }
     }
 
-    // नया फंक्शन: जब रूम डिलीट हो जाए तो यह स्क्रीन दिखेगी
     function showClosedRoomScreen() {
       document.body.innerHTML = `
         <div style='display:flex; flex-direction:column; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px; background-color:#f0f2f5;'>
@@ -181,13 +191,12 @@
       `;
     }
 
-    // नया फंक्शन: पुरानी मेमोरी डिलीट करके विजेट को रीसेट करना
     window.startNewSession = () => {
        localStorage.removeItem('ns_widget_room');
        if(currentRoom) localStorage.removeItem(`ns_chat_name_${currentRoom}`);
        
        if (window.parent && window.parent !== window) {
-           window.parent.location.reload(); // विजेट को रिफ्रेश करता है
+           window.parent.location.reload(); 
        } else {
            window.location.href = '/widget.html';
        }
