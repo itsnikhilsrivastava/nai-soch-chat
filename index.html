@@ -17,11 +17,11 @@
     
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); display: flex; flex-direction: column; height: 100dvh; width: 100vw; position: fixed; overflow: hidden; }
     
-    #login-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    /* Login screen hide by default now */
+    #login-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
     .login-box { text-align: center; width: 80%; max-width: 350px; }
     .login-box h2 { color: var(--primary-color); margin-bottom: 20px; }
     .login-box input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ccc; border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; }
-    .login-box input:focus { border-color: var(--secondary-color); }
     .login-box button { width: 100%; padding: 12px; background-color: var(--secondary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
     
     #app-container { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; bottom: 0; }
@@ -32,7 +32,7 @@
     .room-details { display: flex; flex-direction: column; }
     .room-name { font-size: 16px; font-weight: bold; }
     .status-indicator { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.9; }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; } /* डिफ़ॉल्ट ग्रे */
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; }
 
     .chat-container { flex: 1; padding: 15px; padding-bottom: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
     .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
@@ -41,10 +41,8 @@
     .sender-name { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; display: block; }
     .msg-text { font-size: 15px; line-height: 1.4; color: #111; }
     .timestamp { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 4px; display: block; }
-    
     .msg-media { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; }
     
-    /* टाइपिंग इंडिकेटर CSS */
     .typing-indicator { font-size: 13px; color: var(--secondary-color); font-style: italic; padding: 5px 15px; display: none; background: var(--bg-color); z-index: 5; font-weight: bold; }
     
     .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; z-index: 10; }
@@ -57,7 +55,7 @@
 </head>
 <body>
 
-  <div id="error-notice" class="error-toast">Error connecting to server.</div>
+  <div id="error-notice" class="error-toast"></div>
 
   <div id="login-screen">
     <div class="login-box">
@@ -86,8 +84,6 @@
     </div>
     
     <div class="chat-container" id="chat-box"></div>
-    
-    <!-- टाइपिंग इंडिकेटर यहाँ दिखेगा -->
     <div id="typing-indicator" class="typing-indicator">कोई टाइप कर रहा है...</div>
     
     <div class="input-area">
@@ -102,9 +98,10 @@
 
   <script type="module">
     import { ConvexClient } from "https://esm.sh/convex/browser";
-    
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
-    let client;
+    // Client को सबसे ऊपर इनिशियलाइज़ करना ज़रूरी है ताकि हम रूम चेक कर सकें
+    const client = new ConvexClient(CONVEX_URL);
+    
     let userName = "";
     let currentRoom = "";
     let typingTimeout = null;
@@ -121,25 +118,40 @@
     const statusDot = document.getElementById("status-dot");
     const errorNotice = document.getElementById("error-notice");
     const typingIndicator = document.getElementById("typing-indicator");
-    
     const fileInput = document.getElementById("file-input");
     const cameraBtn = document.getElementById("camera-btn");
 
-    function initApp() {
+    async function initApp() {
       const urlParams = new URLSearchParams(window.location.search);
       currentRoom = urlParams.get('room');
       
+      // 1. अगर लिंक में कोई रूम नहीं है
       if (!currentRoom) {
-         currentRoom = 'general';
-         window.history.replaceState({}, '', `?room=${currentRoom}`);
+         document.body.innerHTML = "<div style='display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px;'><h2 style='color:#d32f2f;'>अमान्य लिंक! कृपया सही चैट लिंक का उपयोग करें।</h2></div>";
+         return;
       }
       
+      // 2. सिक्योरिटी चेक: क्या यह रूम एडमिन या विजेट ने बनाया है?
+      try {
+        const roomExists = await client.query("messages:checkRoomExists", { roomId: currentRoom });
+        if (!roomExists) {
+           document.body.innerHTML = "<div style='display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px;'><h2 style='color:#d32f2f;'>यह चैट रूम मौजूद नहीं है या एडमिन द्वारा बंद कर दिया गया है।</h2></div>";
+           return;
+        }
+      } catch(e) {
+         showError("सर्वर से कनेक्ट करने में त्रुटि हुई।");
+         return;
+      }
+
       roomTitle.textContent = `Room: ${currentRoom}`;
       
       const savedName = localStorage.getItem(`ns_chat_name_${currentRoom}`);
       if (savedName) {
         userName = savedName;
         startChat();
+      } else {
+        // अगर रूम सही है, तभी लॉगिन स्क्रीन दिखाएं
+        loginScreen.style.display = "flex";
       }
     }
 
@@ -165,29 +177,22 @@
       appContainer.style.display = "flex";
       
       try {
-        client = new ConvexClient(CONVEX_URL);
-        
-        // 1. मैसेज मंगाना
         client.onUpdate("messages:getMessages", { roomId: currentRoom }, (messages) => {
           renderMessages(messages);
         });
 
-        // 2. ऑनलाइन स्टेटस और टाइपिंग मंगाना
         client.onUpdate("messages:getPresence", { roomId: currentRoom }, (users) => {
-          // खुद को हटाकर बाकी यूज़र्स की लिस्ट बनाना
           const otherUsers = users.filter(u => u.user !== userName);
 
-          // ऑनलाइन स्टेटस अपडेट करना (नाम के साथ)
           if (otherUsers.length > 0) {
             const names = otherUsers.map(u => u.user).join(", ");
             statusText.textContent = names + " ऑनलाइन हैं";
-            statusDot.style.backgroundColor = "#4CAF50"; // हरा रंग
+            statusDot.style.backgroundColor = "#4CAF50"; 
           } else {
             statusText.textContent = "सिर्फ आप ऑनलाइन हैं";
-            statusDot.style.backgroundColor = "#9e9e9e"; // ग्रे रंग
+            statusDot.style.backgroundColor = "#9e9e9e"; 
           }
 
-          // टाइपिंग इंडिकेटर अपडेट करना
           const typers = otherUsers.filter(u => u.isTyping).map(u => u.user);
           if (typers.length > 0) {
             typingIndicator.textContent = typers.join(", ") + " टाइप कर रहे हैं...";
@@ -197,13 +202,11 @@
           }
         });
 
-        // 3. खुद को ऑनलाइन दिखाना (Heartbeat)
         client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: true });
         setInterval(() => {
           client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: true });
-        }, 10000); // हर 10 सेकंड में सिग्नल भेजना
+        }, 10000);
 
-        // ऐप बंद करने पर ऑफलाइन होना
         window.addEventListener('beforeunload', () => {
           client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isOnline: false });
         });
@@ -213,14 +216,12 @@
       }
     }
 
-    // टाइपिंग करने पर सिग्नल भेजना
     msgInput.addEventListener('input', () => {
       client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: true });
-      
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
         client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
-      }, 2000); // 2 सेकंड तक टाइप न करने पर टाइपिंग बंद
+      }, 2000);
     });
 
     function renderMessages(messages) {
@@ -254,7 +255,6 @@
       const text = msgInput.value.trim();
       if (text !== "") {
         client.mutation("messages:sendMessage", { roomId: currentRoom, text: text, sender: userName });
-        // मैसेज भेजते ही टाइपिंग बंद करना
         client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
         msgInput.value = "";
         msgInput.focus();
@@ -277,16 +277,10 @@
       
       try {
         const postUrl = await client.mutation("messages:generateUploadUrl");
-        const result = await fetch(postUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
+        const result = await fetch(postUrl, { method: "POST", headers: { "Content-Type": file.type }, body: file });
         const { storageId } = await result.json();
         
-        await client.mutation("messages:sendMessage", {
-          roomId: currentRoom, text: msgInput.value.trim(), sender: userName, storageId: storageId, fileType: fileType
-        });
+        await client.mutation("messages:sendMessage", { roomId: currentRoom, text: msgInput.value.trim(), sender: userName, storageId: storageId, fileType: fileType });
         msgInput.value = "";
       } catch (err) {
         showError("Upload failed! File might be too large.");
