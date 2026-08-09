@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>NS Chat Widget</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: transparent; overflow: hidden; height: 100vh; }
+    
+    /* Widget Box */
+    .widget-container { display: flex; flex-direction: column; height: 100%; background: white; border-radius: 15px; overflow: hidden; border: 1px solid #ddd; }
+    .widget-header { background: #075e54; color: white; padding: 15px; text-align: center; font-weight: bold; }
+    
+    /* Lead Form */
+    #lead-form { padding: 20px; flex: 1; display: flex; flex-direction: column; justify-content: center; }
+    #lead-form h3 { margin-top: 0; color: #333; font-size: 16px; text-align: center; }
+    #lead-form input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; box-sizing: border-box; }
+    #lead-form button { width: 100%; padding: 12px; background: #128c7e; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; }
+    
+    /* Iframe for chat */
+    #chat-frame { display: none; width: 100%; height: 100%; border: none; flex: 1; }
+  </style>
+</head>
+<body>
+
+  <div class="widget-container">
+    <div class="widget-header">
+      NS Live Support
+    </div>
+    
+    <div id="lead-form">
+      <h3>चैट शुरू करने के लिए जानकारी दें</h3>
+      <input type="text" id="visitor-name" placeholder="आपका शुभ नाम" required>
+      <input type="tel" id="visitor-mobile" placeholder="मोबाइल नंबर" required>
+      <button onclick="startWidgetChat()">चैट शुरू करें</button>
+    </div>
+    
+    <iframe id="chat-frame" src=""></iframe>
+  </div>
+
+  <script type="module">
+    import { ConvexClient } from "https://esm.sh/convex/browser";
+    const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
+    const client = new ConvexClient(CONVEX_URL);
+
+    window.startWidgetChat = async () => {
+      const name = document.getElementById('visitor-name').value.trim();
+      const mobile = document.getElementById('visitor-mobile').value.trim();
+      
+      if(!name || !mobile) {
+        alert("कृपया अपना नाम और मोबाइल नंबर दर्ज करें।");
+        return;
+      }
+
+      // चेक करें कि क्या इस यूजर का रूम पहले से बना है
+      let room = localStorage.getItem('ns_widget_room');
+      
+      if (!room) {
+        // नया रूम आईडी बनाना (जैसे: 9876543210_Ramesh)
+        room = mobile + "_" + name.replace(/\s+/g, '');
+        localStorage.setItem('ns_widget_room', room);
+        
+        // एडमिन को अलर्ट मैसेज भेजना कि नया विजिटर आया है
+        await client.mutation("messages:sendMessage", {
+          roomId: room,
+          text: `🚨 नया विजिटर: नाम - ${name}, मोबाइल - ${mobile}`,
+          sender: "System"
+        });
+      }
+
+      // चैट के लिए नाम सेव करना
+      localStorage.setItem(`ns_chat_name_${room}`, name);
+
+      // फॉर्म को छिपाना और चैट बॉक्स को खोलना
+      document.getElementById('lead-form').style.display = 'none';
+      const chatFrame = document.getElementById('chat-frame');
+      chatFrame.src = `/?room=${room}`;
+      chatFrame.style.display = 'block';
+    };
+
+    // अगर पहले से जानकारी भरी है, तो सीधे चैट खोलें
+    window.onload = () => {
+      const existingRoom = localStorage.getItem('ns_widget_room');
+      if(existingRoom) {
+        document.getElementById('lead-form').style.display = 'none';
+        const chatFrame = document.getElementById('chat-frame');
+        chatFrame.src = `/?room=${existingRoom}`;
+        chatFrame.style.display = 'block';
+      }
+    };
+  </script>
+</body>
+</html>
