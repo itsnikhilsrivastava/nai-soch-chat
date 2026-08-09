@@ -17,7 +17,6 @@
     
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background-color: var(--bg-color); display: flex; flex-direction: column; height: 100dvh; width: 100vw; position: fixed; overflow: hidden; }
     
-    /* Login screen hide by default now */
     #login-screen { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
     .login-box { text-align: center; width: 80%; max-width: 350px; }
     .login-box h2 { color: var(--primary-color); margin-bottom: 20px; }
@@ -35,27 +34,46 @@
     .status-dot { width: 8px; height: 8px; border-radius: 50%; background-color: #9e9e9e; }
 
     .chat-container { flex: 1; padding: 15px; padding-bottom: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-repeat: repeat; }
-    .message { max-width: 80%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
+    .message { max-width: 85%; padding: 8px 12px; border-radius: 8px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); word-wrap: break-word; }
     .msg-admin { background-color: var(--msg-admin-bg); align-self: flex-end; border-top-right-radius: 0; }
     .msg-guest { background-color: var(--msg-guest-bg); align-self: flex-start; border-top-left-radius: 0; }
     .sender-name { font-size: 12px; font-weight: bold; color: var(--primary-color); margin-bottom: 4px; display: block; }
-    .msg-text { font-size: 15px; line-height: 1.4; color: #111; }
-    .timestamp { font-size: 10px; color: var(--text-muted); text-align: right; margin-top: 4px; display: block; }
-    .msg-media { max-width: 100%; max-height: 300px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; }
+    .msg-text { font-size: 15px; line-height: 1.4; color: #111; display: block; }
+    
+    /* लिंक का डिज़ाइन */
+    .chat-link { color: #027eb5; text-decoration: underline; font-weight: 500; word-break: break-all; }
+    
+    .msg-media { max-width: 100%; max-height: 250px; border-radius: 6px; margin-top: 5px; margin-bottom: 5px; display: block; cursor: pointer; object-fit: cover; }
+    
+    .msg-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 2px; gap: 8px; }
+    .timestamp { font-size: 10px; color: var(--text-muted); }
+    .copy-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; font-size: 12px; opacity: 0.6; }
+    .copy-btn:hover { opacity: 1; color: var(--primary-color); }
     
     .typing-indicator { font-size: 13px; color: var(--secondary-color); font-style: italic; padding: 5px 15px; display: none; background: var(--bg-color); z-index: 5; font-weight: bold; }
     
     .input-area { display: flex; padding: 10px; background-color: #f0f0f0; align-items: center; gap: 10px; z-index: 10; }
     .input-wrapper { flex: 1; display: flex; align-items: center; background: white; border-radius: 24px; padding: 0 15px; }
-    .input-wrapper input { flex: 1; padding: 12px 0; border: none; outline: none; font-size: 15px; background: transparent; }
+    .input-wrapper textarea { flex: 1; padding: 12px 0; border: none; outline: none; font-size: 15px; background: transparent; resize: none; max-height: 100px; font-family: inherit; }
     .icon-btn { background: none; border: none; color: var(--text-muted); font-size: 20px; padding: 10px; cursor: pointer; }
     .send-btn-circle { background-color: var(--secondary-color); color: white; width: 45px; height: 45px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: none; cursor: pointer; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
     .error-toast { display: none; background: #d32f2f; color: white; text-align: center; padding: 10px; position: absolute; top: 0; width: 100%; z-index: 2000; font-size: 14px; }
+
+    /* इमेज व्यूअर का डिज़ाइन */
+    #image-modal { display: none; position: fixed; z-index: 3000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.9); justify-content: center; align-items: center; flex-direction: column; }
+    #modal-img { max-width: 95%; max-height: 80%; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+    .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
   </style>
 </head>
 <body>
 
   <div id="error-notice" class="error-toast"></div>
+
+  <!-- फुल स्क्रीन इमेज व्यूअर -->
+  <div id="image-modal">
+    <span class="close-modal" onclick="closeImageModal()">&times;</span>
+    <img id="modal-img" src="">
+  </div>
 
   <div id="login-screen">
     <div class="login-box">
@@ -90,7 +108,7 @@
       <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
       <button class="icon-btn" id="camera-btn" title="Send Media"><i class="fas fa-camera"></i></button>
       <div class="input-wrapper">
-        <input type="text" id="message-input" placeholder="मैसेज टाइप करें..." onkeypress="handleSendKeyPress(event)">
+        <textarea id="message-input" rows="1" placeholder="मैसेज टाइप करें..." oninput="autoResize(this)" onkeypress="handleSendKeyPress(event)"></textarea>
       </div>
       <button class="send-btn-circle" id="send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
@@ -99,7 +117,6 @@
   <script type="module">
     import { ConvexClient } from "https://esm.sh/convex/browser";
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
-    // Client को सबसे ऊपर इनिशियलाइज़ करना ज़रूरी है ताकि हम रूम चेक कर सकें
     const client = new ConvexClient(CONVEX_URL);
     
     let userName = "";
@@ -125,13 +142,11 @@
       const urlParams = new URLSearchParams(window.location.search);
       currentRoom = urlParams.get('room');
       
-      // 1. अगर लिंक में कोई रूम नहीं है
       if (!currentRoom) {
          document.body.innerHTML = "<div style='display:flex; height:100vh; align-items:center; justify-content:center; text-align:center; padding:20px;'><h2 style='color:#d32f2f;'>अमान्य लिंक! कृपया सही चैट लिंक का उपयोग करें।</h2></div>";
          return;
       }
       
-      // 2. सिक्योरिटी चेक: क्या यह रूम एडमिन या विजेट ने बनाया है?
       try {
         const roomExists = await client.query("messages:checkRoomExists", { roomId: currentRoom });
         if (!roomExists) {
@@ -150,7 +165,6 @@
         userName = savedName;
         startChat();
       } else {
-        // अगर रूम सही है, तभी लॉगिन स्क्रीन दिखाएं
         loginScreen.style.display = "flex";
       }
     }
@@ -168,9 +182,58 @@
 
     window.handleLoginKeyPress = (e) => { if (e.key === 'Enter') joinBtn.click(); }
 
+    // इनपुट बॉक्स को अपने आप बड़ा करने के लिए
+    window.autoResize = (textarea) => {
+      textarea.style.height = 'auto';
+      textarea.style.height = (textarea.scrollHeight < 100 ? textarea.scrollHeight : 100) + 'px';
+      
+      // टाइपिंग सिग्नल
+      client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: true });
+      clearTimeout(typingTimeout);
+      typingTimeout = setTimeout(() => {
+        client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
+      }, 2000);
+    }
+
     function formatTime(timestamp) {
         return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
+
+    // एडवांस टेक्स्ट फॉर्मेटिंग (लिंक्स और बोल्ड/इटैलिक)
+    function formatMessageText(text) {
+        if (!text) return "";
+        let safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;"); // XSS से बचाव
+        
+        // लिंक्स को क्लिकेबल बनाना
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        safeText = safeText.replace(urlRegex, '<a href="$1" target="_blank" class="chat-link" rel="noopener noreferrer">$1</a>');
+        
+        // बोल्ड (*text*)
+        safeText = safeText.replace(/\*(.*?)\*/g, '<strong>$1</strong>');
+        // इटैलिक (_text_)
+        safeText = safeText.replace(/_(.*?)_/g, '<em>$1</em>');
+        // लाइन ब्रेक
+        safeText = safeText.replace(/\n/g, '<br>');
+        
+        return safeText;
+    }
+
+    // कॉपी करने का फंक्शन
+    window.copyText = (btn) => {
+        const textToCopy = btn.getAttribute('data-text');
+        navigator.clipboard.writeText(textToCopy);
+        btn.innerHTML = '<i class="fas fa-check" style="color:green;"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 2000);
+    };
+
+    // फुल स्क्रीन फोटो व्यूअर
+    window.openImageModal = (src) => {
+        document.getElementById('modal-img').src = src;
+        document.getElementById('image-modal').style.display = 'flex';
+    };
+    window.closeImageModal = () => {
+        document.getElementById('image-modal').style.display = 'none';
+    };
 
     function startChat() {
       loginScreen.style.display = "none";
@@ -216,14 +279,6 @@
       }
     }
 
-    msgInput.addEventListener('input', () => {
-      client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: true });
-      clearTimeout(typingTimeout);
-      typingTimeout = setTimeout(() => {
-        client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
-      }, 2000);
-    });
-
     function renderMessages(messages) {
       chatBox.innerHTML = messages.map(m => {
         const isMe = m.sender === userName;
@@ -235,16 +290,23 @@
             if (m.fileType === 'video') {
                 mediaHTML = `<video class="msg-media" controls src="${m.fileUrl}"></video>`;
             } else {
-                mediaHTML = `<img class="msg-media" src="${m.fileUrl}" alt="Photo">`;
+                mediaHTML = `<img class="msg-media" src="${m.fileUrl}" alt="Photo" onclick="openImageModal('${m.fileUrl}')">`;
             }
         }
+        
+        // कॉपी बटन का डेटा तैयार करना
+        const safeRawText = m.text ? m.text.replace(/"/g, '&quot;') : '';
+        const copyBtn = m.text ? `<button class="copy-btn" data-text="${safeRawText}" onclick="copyText(this)" title="कॉपी करें"><i class="fas fa-copy"></i></button>` : '';
         
         return `
           <div class="message ${msgClass}">
             <span class="sender-name">${displayName}</span>
             ${mediaHTML}
-            ${m.text ? `<span class="msg-text">${m.text}</span>` : ''}
-            <span class="timestamp">${formatTime(m.timestamp)}</span>
+            ${m.text ? `<span class="msg-text">${formatMessageText(m.text)}</span>` : ''}
+            <div class="msg-footer">
+               <span class="timestamp">${formatTime(m.timestamp)}</span>
+               ${copyBtn}
+            </div>
           </div>
         `;
       }).join("");
@@ -257,11 +319,18 @@
         client.mutation("messages:sendMessage", { roomId: currentRoom, text: text, sender: userName });
         client.mutation("messages:updatePresence", { roomId: currentRoom, user: userName, isTyping: false });
         msgInput.value = "";
+        msgInput.style.height = 'auto'; // बॉक्स वापस छोटा करना
         msgInput.focus();
       }
     };
 
-    window.handleSendKeyPress = (e) => { if (e.key === 'Enter') sendBtn.click(); }
+    window.handleSendKeyPress = (e) => { 
+        // एंटर से सेंड करना, Shift+Enter से नई लाइन बनाना
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendBtn.click(); 
+        }
+    }
 
     cameraBtn.onclick = () => fileInput.click();
     fileInput.onchange = async (e) => {
@@ -282,6 +351,7 @@
         
         await client.mutation("messages:sendMessage", { roomId: currentRoom, text: msgInput.value.trim(), sender: userName, storageId: storageId, fileType: fileType });
         msgInput.value = "";
+        msgInput.style.height = 'auto';
       } catch (err) {
         showError("Upload failed! File might be too large.");
       } finally {
