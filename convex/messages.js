@@ -30,12 +30,12 @@ export const sendMessage = mutation({
       timestamp: Date.now(),
       storageId: args.storageId,
       fileType: args.fileType,
-      isRead: false, // नया: डिफ़ॉल्ट रूप से मैसेज 'बिना पढ़ा' होगा
+      isRead: false,
+      limit: args.limit // नया: रूम की लिमिट सेट करने के लिए
     });
   }
 });
 
-// नया फंक्शन: मैसेज को 'पढ़ा हुआ' (Read/Blue Tick) मार्क करना
 export const markMessagesRead = mutation({
   handler: async (ctx, args) => {
     const unreadMessages = await ctx.db.query("messages")
@@ -52,12 +52,27 @@ export const markMessagesRead = mutation({
   }
 });
 
+// अपडेटेड: अब यह रूम की लिमिट और जुड़ चुके लोगों की गिनती भी बताएगा
 export const checkRoomExists = query({
   handler: async (ctx, args) => {
-    const msg = await ctx.db.query("messages")
+    const messages = await ctx.db.query("messages")
       .filter(q => q.eq(q.field("roomId"), args.roomId))
-      .first();
-    return msg !== null;
+      .collect();
+      
+    if (messages.length === 0) return { exists: false };
+
+    // रूम की लिमिट ढूँढना (जो एडमिन ने सेट की थी)
+    const sysMsg = messages.find(m => m.sender === "System" && m.limit !== undefined);
+    const limit = sysMsg ? sysMsg.limit : 0;
+
+    // इस रूम में अब तक कितने लोग जुड़ चुके हैं, उनकी लिस्ट बनाना
+    const presence = await ctx.db.query("presence")
+      .filter(q => q.eq(q.field("roomId"), args.roomId))
+      .collect();
+      
+    const uniqueUsers = Array.from(new Set(presence.map(p => p.user)));
+
+    return { exists: true, limit: limit, joinedUsers: uniqueUsers };
   }
 });
 
