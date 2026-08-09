@@ -33,9 +33,13 @@
     .back-btn { background: none; border: none; color: white; font-size: 18px; cursor: pointer; }
 
     #widget-modal { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
-    .modal-content { background: white; width: 85%; max-width: 400px; padding: 20px; border-radius: 10px; }
-    .modal-content textarea { width: 100%; height: 120px; margin-top: 10px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; }
-    .close-btn { background: red; color: white; padding: 8px 12px; border: none; border-radius: 5px; margin-top: 10px; width: 100%; font-weight:bold; }
+    .modal-content { background: white; width: 85%; max-width: 450px; padding: 20px; border-radius: 10px; }
+    .modal-content input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+    .modal-content textarea { width: 100%; height: 120px; padding: 10px; box-sizing: border-box; font-family: monospace; font-size: 12px; border-radius: 5px; border: 1px solid #ccc; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 15px; }
+    .modal-btns button { flex: 1; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; color: white; }
+    .generate-btn { background: #075e54; }
+    .close-btn { background: #ff4444; }
   </style>
 </head>
 <body>
@@ -44,7 +48,7 @@
     <h2>NS Admin Panel</h2>
     <div class="btn-group">
       <button class="btn btn-new" onclick="createNewRoom()"><i class="fas fa-plus"></i></button>
-      <button class="btn" onclick="showWidgetCode()"><i class="fas fa-code"></i></button>
+      <button class="btn" onclick="openWidgetModal()"><i class="fas fa-code"></i></button>
     </div>
   </div>
   
@@ -62,9 +66,13 @@
 
   <div id="widget-modal">
     <div class="modal-content">
-      <h3 style="margin-top:0; color:#075e54;">Website Widget Code</h3>
-      <textarea id="embed-code" readonly></textarea>
-      <button class="close-btn" onclick="document.getElementById('widget-modal').style.display='none'">बंद करें</button>
+      <h3 style="margin-top:0; color:#075e54;">Floating Widget Code</h3>
+      <input type="text" id="site-source" placeholder="वेबसाइट का नाम (e.g., NS NOW, Blogger)">
+      <textarea id="embed-code" readonly placeholder="यहाँ कोड जनरेट होगा..."></textarea>
+      <div class="modal-btns">
+        <button class="generate-btn" onclick="generateWidgetCode()">कोड बनाएं</button>
+        <button class="close-btn" onclick="document.getElementById('widget-modal').style.display='none'">बंद करें</button>
+      </div>
     </div>
   </div>
 
@@ -72,6 +80,9 @@
     import { ConvexClient } from "https://esm.sh/convex/browser";
     const CONVEX_URL = "https://beloved-hare-920.convex.cloud";
     const client = new ConvexClient(CONVEX_URL);
+    
+    // यह ट्रैक करेगा कि एडमिन ने किस रूम में 'एजेंट जुड़ा' मैसेज भेज दिया है
+    let agentJoinedRooms = new Set();
 
     client.onUpdate("messages:getActiveRooms", {}, (rooms) => {
       const roomListDiv = document.getElementById("room-list");
@@ -97,26 +108,17 @@
       `).join("");
     });
 
-    // लिंक शेयर (कॉपी) करने का फंक्शन
     window.shareRoom = (event, roomId) => {
       event.stopPropagation();
       const link = window.location.origin + "/?room=" + roomId;
-      navigator.clipboard.writeText(link).then(() => {
-        alert("चैट रूम का लिंक कॉपी हो गया:\n" + link);
-      }).catch(() => {
-        alert("कॉपी करने के लिए यह लिंक शेयर करें:\n" + link);
-      });
+      navigator.clipboard.writeText(link).then(() => { alert("चैट रूम का लिंक कॉपी हो गया!"); });
     };
 
     window.createNewRoom = () => {
       const roomName = prompt("नए रूम का नाम दर्ज करें (बिना स्पेस के):");
       if(roomName && roomName.trim() !== "") {
         const cleanName = roomName.trim().replace(/\s+/g, '-').toLowerCase();
-        client.mutation("messages:sendMessage", {
-          roomId: cleanName,
-          text: "चैट रूम तैयार है।",
-          sender: "System"
-        });
+        client.mutation("messages:sendMessage", { roomId: cleanName, text: "चैट रूम तैयार है।", sender: "System" });
         openChat(cleanName);
       }
     };
@@ -133,6 +135,16 @@
       document.getElementById('active-room-name').innerText = "चैट: " + roomId;
       document.getElementById('chat-frame').src = `/?room=${roomId}`;
       document.getElementById('chat-view').style.display = 'flex';
+      
+      // सिर्फ एक बार "एजेंट जुड़ा" मैसेज भेजना
+      if (!agentJoinedRooms.has(roomId)) {
+          client.mutation("messages:sendMessage", {
+              roomId: roomId,
+              text: "👨‍💻 सपोर्ट एजेंट (NS Admin) चैट से जुड़ गए हैं।",
+              sender: "System"
+          });
+          agentJoinedRooms.add(roomId);
+      }
     };
 
     window.closeChat = () => {
@@ -140,15 +152,42 @@
       document.getElementById('chat-frame').src = "";
     };
 
-    window.showWidgetCode = () => {
+    window.openWidgetModal = () => {
+      document.getElementById('embed-code').value = '';
+      document.getElementById('site-source').value = '';
+      document.getElementById('widget-modal').style.display = 'flex';
+    };
+
+    window.generateWidgetCode = () => {
       const siteUrl = window.location.origin;
+      const source = document.getElementById('site-source').value.trim() || 'Website';
+      const encodedSource = encodeURIComponent(source);
+      
       const code = `
-<!-- NS Live Chat Widget -->
+<!-- NS Live Chat Floating Button -->
+<style>
+#nsChatBtn{ position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:#075e54; color:#fff; font-size:28px; border:none; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,.3); z-index:99999; display:flex; align-items:center; justify-content:center; }
+#nsChatBox{ position:fixed; bottom:90px; right:20px; width:350px; height:500px; border:none; border-radius:15px; box-shadow:0 5px 20px rgba(0,0,0,.3); display:none; z-index:99999; background:#fff; }
+@media(max-width:768px){ #nsChatBox{ width:95%; height:80%; right:2.5%; bottom:80px; } }
+</style>
+
+<button id="nsChatBtn">💬</button>
+<iframe id="nsChatBox" src="${siteUrl}/widget.html?source=${encodedSource}"></iframe>
+
 <script>
-  document.write('<iframe src="${siteUrl}/widget.html" style="position:fixed; bottom:20px; right:20px; width:350px; height:500px; border:none; border-radius:15px; box-shadow:0 5px 15px rgba(0,0,0,0.3); z-index:9999; background:transparent;"></iframe>');
+const btn = document.getElementById("nsChatBtn");
+const chat = document.getElementById("nsChatBox");
+btn.onclick = function(){
+  if(chat.style.display==="block"){
+    chat.style.display="none";
+    btn.innerHTML="💬";
+  }else{
+    chat.style.display="block";
+    btn.innerHTML="✖";
+  }
+}
 </scr` + `ipt>`;
       document.getElementById('embed-code').value = code.trim();
-      document.getElementById('widget-modal').style.display = 'flex';
     };
   </script>
 </body>
