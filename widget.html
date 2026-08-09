@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -25,10 +25,10 @@
     </div>
     
     <div id="lead-form">
-      <h3>चैट शुरू करने के लिए जानकारी दें</h3>
-      <input type="text" id="visitor-name" placeholder="आपका शुभ नाम" required>
-      <input type="tel" id="visitor-mobile" placeholder="मोबाइल नंबर" required>
-      <button onclick="startWidgetChat()">चैट शुरू करें</button>
+      <h3>Enter details to start chat</h3>
+      <input type="text" id="visitor-name" placeholder="Your Name" required>
+      <input type="tel" id="visitor-mobile" placeholder="Mobile Number" required>
+      <button onclick="startWidgetChat()">Start Chat</button>
     </div>
     
     <iframe id="chat-frame" src=""></iframe>
@@ -44,7 +44,7 @@
       const mobile = document.getElementById('visitor-mobile').value.trim();
       
       if(!name || !mobile) {
-        alert("कृपया अपना नाम और मोबाइल नंबर दर्ज करें।");
+        alert("Please enter your name and mobile number.");
         return;
       }
 
@@ -59,7 +59,7 @@
         
         await client.mutation("messages:sendMessage", {
           roomId: room,
-          text: `🚨 नया विजिटर [${source}]:\n👤 नाम: ${name}\n📱 मोबाइल: ${mobile}`,
+          text: `🚨 New Visitor [${source}]:\n👤 Name: ${name}\n📱 Mobile: ${mobile}`,
           sender: "System"
         });
       }
