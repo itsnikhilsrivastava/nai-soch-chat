@@ -1,7 +1,7 @@
 {
   "name": "WhatsApp Chat",
   "short_name": "WhatsApp",
-  "start_url": "/",
+  "start_url": "/wa-chat.html", 
   "display": "standalone",
   "background_color": "#0b141a",
   "theme_color": "#1f2c34",
