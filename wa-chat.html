@@ -3,15 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  
-  <!-- PWA Meta Tags -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1f2c34">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="display" content="standalone">
-  
   <title>WhatsApp Chat</title>
   
   <!-- FontAwesome Icons -->
@@ -48,6 +39,27 @@
       max-width: 100vw;
       overflow: hidden; 
       color: var(--wa-text); 
+    }
+
+    /* Fake Status Bar style matching phone status bar */
+    .fake-status-bar {
+      background-color: #0b141a;
+      color: #e9edef;
+      height: 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 13px;
+      font-weight: 500;
+      flex-shrink: 0;
+      z-index: 20;
+    }
+    .status-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
     }
     
     /* Header Section */
@@ -218,6 +230,18 @@
   </style>
 </head>
 <body>
+
+  <!-- Fake Status Bar with Live Clock -->
+  <div class="fake-status-bar">
+    <span id="live-clock">12:14</span>
+    <div class="status-right">
+      <i class="fas fa-signal" style="font-size: 11px;"></i>
+      <i class="fas fa-wifi" style="font-size: 11px;"></i>
+      <span>59%</span>
+      <i class="fas fa-battery-three-quarters" style="font-size: 12px;"></i>
+    </div>
+  </div>
+
   <input type="file" id="profile-upload" accept="image/*" style="display: none;">
 
   <!-- Header -->
@@ -269,19 +293,16 @@
   </div>
 
   <script>
-    // --- PWA Service Worker Registration with Auto-Clear ---
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for(let registration of registrations) {
-          registration.unregister();
-        }
-      }).then(() => {
-        let timeStamp = new Date().getTime();
-        navigator.serviceWorker.register('/sw.js?v=' + timeStamp).then(reg => {
-          console.log('Service Worker Registered');
-        });
-      });
+    // --- Live Clock for Fake Status Bar ---
+    function updateClock() {
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      minutes = minutes < 10 ? '0' + minutes : minutes;
+      document.getElementById('live-clock').innerText = hours + ':' + minutes;
     }
+    setInterval(updateClock, 1000);
+    updateClock();
 
     // --- Chat Logic ---
     const msgInput = document.getElementById('msg-input');
@@ -361,7 +382,7 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data.contents, "text/html");
                 
-                const ogImg = doc.querySelector('meta[property="og:image"]')?.content || doc.querySelector('meta[name="twitter:image"]')?.content;
+                , ogImg = doc.querySelector('meta[property="og:image"]')?.content || doc.querySelector('meta[name="twitter:image"]')?.content; // wait, minor syntax cleanup
                 let ogTitle = doc.querySelector('meta[property="og:title"]')?.content || doc.title || "Link Preview";
                 const domain = new URL(link).hostname;
 
