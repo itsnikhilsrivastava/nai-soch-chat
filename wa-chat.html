@@ -151,7 +151,6 @@
     .msg-meta { float: right; display: flex; align-items: center; gap: 4px; margin-top: 4px; margin-left: 10px; margin-bottom: -4px; }
     .time { font-size: 11px; color: rgba(255,255,255,0.6); }
     
-    /* Clickable Ticks for changing status */
     .ticks { 
       cursor: pointer; 
       font-size: 13px; 
@@ -240,7 +239,7 @@
 </head>
 <body>
 
-  <!-- Fake Status Bar with Live Clock -->
+  <!-- Fake Status Bar -->
   <div class="fake-status-bar">
     <span id="live-clock">12:14</span>
     <div class="status-right">
@@ -326,7 +325,6 @@
     const profileImg = document.getElementById('profile-img');
     const profilePlaceholder = document.getElementById('profile-placeholder');
 
-    // Fix Send Button & Typing state
     msgInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
@@ -365,7 +363,7 @@
         }
     });
 
-    // Interactive Ticks Changer (Clicking ticks cycles through Single, Double Grey, Blue)
+    // Interactive Ticks Changer
     chatBox.addEventListener('click', (e) => {
         const ticksEl = e.target.closest('.ticks');
         if (!ticksEl) return;
@@ -406,16 +404,53 @@
             const link = urls[0];
             spinner.style.display = "block"; 
             
-            try {
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(link)}`);
-                const data = await response.json();
-                
+            let htmlData = null;
+            
+            // Multi-Proxy Fallback System for Open Graph metadata
+            const proxies = [
+                `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`,
+                `https://api.codetabs.com/v1/proxy?url=${encodeURIComponent(link)}`
+            ];
+
+            for (let proxyUrl of proxies) {
+                try {
+                    const response = await fetch(proxyUrl);
+                    if (proxyUrl.includes('allorigins')) {
+                        const data = await response.json();
+                        if (data && data.contents) {
+                            htmlData = data.contents;
+                            break;
+                        }
+                    } else {
+                        const textData = await response.text();
+                        if (textData) {
+                            htmlData = textData;
+                            break;
+                        }
+                    }
+                } catch (err) {
+                    console.log("Proxy failed, trying next...");
+                }
+            }
+
+            if (htmlData) {
                 const parser = new DOMParser();
-                const doc = parser.parseFromString(data.contents, "text/html");
+                const doc = parser.parseFromString(htmlData, "text/html");
                 
-                const ogImg = doc.querySelector('meta[property="og:image"]')?.content || doc.querySelector('meta[name="twitter:image"]')?.content;
-                let ogTitle = doc.querySelector('meta[property="og:title"]')?.content || doc.title || "Link Preview";
-                const domain = new URL(link).hostname;
+                const ogImg = doc.querySelector('meta[property="og:image"]')?.content || 
+                              doc.querySelector('meta[name="twitter:image"]')?.content ||
+                              doc.querySelector('link[rel="image_src"]')?.href;
+                              
+                let ogTitle = doc.querySelector('meta[property="og:title"]')?.content || 
+                              doc.querySelector('meta[name="twitter:title"]')?.content || 
+                              doc.title || "Link Preview";
+                              
+                let domain = "";
+                try {
+                    domain = new URL(link).hostname;
+                } catch(e) {
+                    domain = link;
+                }
 
                 if (ogImg) {
                     previewHTML = `
@@ -429,8 +464,6 @@
                         </div>
                     </div>`;
                 }
-            } catch (error) {
-                console.log("No preview found");
             }
             spinner.style.display = "none";
         }
