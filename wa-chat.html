@@ -141,7 +141,7 @@
     
     .date-badge { align-self: center; background-color: var(--wa-system-msg-bg); color: var(--wa-text-muted); font-size: 12px; padding: 6px 12px; border-radius: 8px; margin-top: 5px; }
     
-    /* Hidden Share Button (Disguised as Encryption Notice) */
+    /* Hidden Share Trigger on Encryption Message */
     .enc-message { 
       align-self: center; 
       background-color: var(--wa-system-msg-bg); 
@@ -337,7 +337,6 @@
         try {
           const encodedData = hash.replace('#chat=', '');
           const decodedHtml = decodeURIComponent(atob(encodedData));
-          // Keep the date-badge and enc-message, append shared rows
           const chatBox = document.getElementById('chat-box');
           chatBox.insertAdjacentHTML('beforeend', decodedHtml);
         } catch(e) {
@@ -346,10 +345,9 @@
       }
     });
 
-    // --- Hidden Share Link Generator (Clicking Encryption Banner) ---
+    // --- Hidden Share Link Generator ---
     document.getElementById('share-trigger').addEventListener('click', () => {
       const chatBox = document.getElementById('chat-box');
-      // Clone chatBox and remove the encryption banner from shared payload
       const clone = chatBox.cloneNode(true);
       const encMsg = clone.querySelector('.enc-message');
       if(encMsg) encMsg.remove();
@@ -459,64 +457,36 @@
             const link = urls[0];
             spinner.style.display = "block"; 
             
-            let htmlData = null;
-            const proxies = [
-                `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`,
-                `https://api.codetabs.com/v1/proxy?url=${encodeURIComponent(link)}`
-            ];
+            try {
+                // Using Microlink API to fetch metadata reliably without CORS issues
+                const response = await fetch(`https://api.microlink.io/?url=${encodeURIComponent(link)}`);
+                const json = await response.json();
 
-            for (let proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl);
-                    if (proxyUrl.includes('allorigins')) {
-                        const data = await response.json();
-                        if (data && data.contents) {
-                            htmlData = data.contents;
-                            break;
-                        }
-                    } else {
-                        const textData = await response.text();
-                        if (textData) {
-                            htmlData = textData;
-                            break;
-                        }
+                if (json.status === 'success' && json.data) {
+                    const ogTitle = json.data.title || "Link Preview";
+                    const ogImg = json.data.image ? json.data.image.url : null;
+                    let domain = "";
+                    try {
+                        domain = new URL(link).hostname;
+                    } catch(e) {
+                        domain = link;
                     }
-                } catch (err) {
-                    console.log("Proxy failed");
-                }
-            }
 
-            if (htmlData) {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlData, "text/html");
-                
-                const ogImg = doc.querySelector('meta[property="og:image"]')?.content || 
-                              doc.querySelector('meta[name="twitter:image"]')?.content ||
-                              doc.querySelector('link[rel="image_src"]')?.href;
-                              
-                let ogTitle = doc.querySelector('meta[property="og:title"]')?.content || 
-                              doc.querySelector('meta[name="twitter:title"]')?.content || 
-                              doc.title || "Link Preview";
-                              
-                let domain = "";
-                try {
-                    domain = new URL(link).hostname;
-                } catch(e) {
-                    domain = link;
+                    if (ogImg) {
+                        previewHTML = `
+                        <div class="link-preview" onclick="window.open('${link}', '_blank')">
+                            <div class="link-image">
+                                <img src="${ogImg}" alt="Preview" onerror="this.parentElement.style.display='none'">
+                            </div>
+                            <div class="link-info">
+                                <div class="link-title">${ogTitle}</div>
+                                <div class="link-domain"><i class="fas fa-link"></i> ${domain}</div>
+                            </div>
+                        </div>`;
+                    }
                 }
-
-                if (ogImg) {
-                    previewHTML = `
-                    <div class="link-preview" onclick="window.open('${link}', '_blank')">
-                        <div class="link-image">
-                            <img src="${ogImg}" alt="Preview" onerror="this.parentElement.style.display='none'">
-                        </div>
-                        <div class="link-info">
-                            <div class="link-title">${ogTitle}</div>
-                            <div class="link-domain"><i class="fas fa-link"></i> ${domain}</div>
-                        </div>
-                    </div>`;
-                }
+            } catch (error) {
+                console.log("Microlink API failed", error);
             }
             spinner.style.display = "none";
         }
