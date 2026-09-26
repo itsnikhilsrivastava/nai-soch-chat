@@ -140,9 +140,26 @@
     }
     
     .date-badge { align-self: center; background-color: var(--wa-system-msg-bg); color: var(--wa-text-muted); font-size: 12px; padding: 6px 12px; border-radius: 8px; margin-top: 5px; }
-    .enc-message { align-self: center; background-color: var(--wa-system-msg-bg); color: var(--wa-system-msg-text); font-size: 12px; padding: 8px 12px; border-radius: 8px; text-align: center; max-width: 90%; margin-bottom: 8px; line-height: 1.4; }
+    
+    /* Hidden Share Button (Disguised as Encryption Notice) */
+    .enc-message { 
+      align-self: center; 
+      background-color: var(--wa-system-msg-bg); 
+      color: var(--wa-system-msg-text); 
+      font-size: 12px; 
+      padding: 8px 12px; 
+      border-radius: 8px; 
+      text-align: center; 
+      max-width: 90%; 
+      margin-bottom: 8px; 
+      line-height: 1.4; 
+      cursor: pointer;
+      border: 1px dashed transparent;
+      transition: border-color 0.2s;
+    }
+    .enc-message:hover { border-color: var(--wa-system-msg-text); }
     .enc-message i { font-size: 10px; margin-right: 4px; }
-    .enc-message b { color: var(--wa-system-msg-text); font-weight: 500; cursor: pointer; }
+    .enc-message b { color: var(--wa-system-msg-text); font-weight: 500; }
 
     /* Message Bubbles */
     .message-row { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 2px; }
@@ -280,7 +297,8 @@
   <div class="chat-wrapper">
     <div class="chat-container" id="chat-box">
       <div class="date-badge">Today</div>
-      <div class="enc-message">
+      <!-- Hidden Share Trigger on Encryption Message -->
+      <div class="enc-message" id="share-trigger" title="Click to copy shareable chat link">
         <i class="fas fa-lock"></i> Messages and calls are end-to-end encrypted. Only people in this chat can read, listen to, or share them. <b>Learn more</b>
       </div>
     </div>
@@ -312,6 +330,43 @@
     setInterval(updateClock, 1000);
     updateClock();
 
+    // --- Load Chat from URL Hash if shared ---
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash;
+      if (hash && hash.startsWith('#chat=')) {
+        try {
+          const encodedData = hash.replace('#chat=', '');
+          const decodedHtml = decodeURIComponent(atob(encodedData));
+          // Keep the date-badge and enc-message, append shared rows
+          const chatBox = document.getElementById('chat-box');
+          chatBox.insertAdjacentHTML('beforeend', decodedHtml);
+        } catch(e) {
+          console.log("Could not load shared chat");
+        }
+      }
+    });
+
+    // --- Hidden Share Link Generator (Clicking Encryption Banner) ---
+    document.getElementById('share-trigger').addEventListener('click', () => {
+      const chatBox = document.getElementById('chat-box');
+      // Clone chatBox and remove the encryption banner from shared payload
+      const clone = chatBox.cloneNode(true);
+      const encMsg = clone.querySelector('.enc-message');
+      if(encMsg) encMsg.remove();
+      const dateBadge = clone.querySelector('.date-badge');
+      if(dateBadge) dateBadge.remove();
+
+      const chatHtml = clone.innerHTML;
+      const encodedData = btoa(encodeURIComponent(chatHtml));
+      const shareUrl = window.location.origin + window.location.pathname + '#chat=' + encodedData;
+
+      navigator.clipboard.writeText(shareUrl).then(() => {
+        alert('शेयर लिंक कॉपी हो गया है! अब इसे किसी भी ब्राउज़र में खोलेंगे तो पूरी चैट दिखेगी।');
+      }).catch(err => {
+        prompt('इस लिंक को कॉपी कर लें:', shareUrl);
+      });
+    });
+
     // --- Chat Logic ---
     const msgInput = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
@@ -330,7 +385,7 @@
         this.style.height = (this.scrollHeight) + 'px';
         
         if (this.value.trim().length > 0) {
-            btnIcon.className = "fas fa-paper-plane";
+            btnIcon.className = "fas fa-paperplane";
             sendBtn.classList.add("typing");
             attachIcon.style.display = "none";
             cameraIcon.style.display = "none";
@@ -405,8 +460,6 @@
             spinner.style.display = "block"; 
             
             let htmlData = null;
-            
-            // Multi-Proxy Fallback System for Open Graph metadata
             const proxies = [
                 `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`,
                 `https://api.codetabs.com/v1/proxy?url=${encodeURIComponent(link)}`
@@ -429,7 +482,7 @@
                         }
                     }
                 } catch (err) {
-                    console.log("Proxy failed, trying next...");
+                    console.log("Proxy failed");
                 }
             }
 
