@@ -41,7 +41,7 @@
       color: var(--wa-text); 
     }
 
-    /* Fake Status Bar style matching phone status bar */
+    /* Fake Status Bar */
     .fake-status-bar {
       background-color: #0b141a;
       color: #e9edef;
@@ -150,8 +150,17 @@
     
     .msg-meta { float: right; display: flex; align-items: center; gap: 4px; margin-top: 4px; margin-left: 10px; margin-bottom: -4px; }
     .time { font-size: 11px; color: rgba(255,255,255,0.6); }
-    .ticks { color: var(--wa-blue-tick); font-size: 13px; }
-    .ticks.single { color: rgba(255,255,255,0.6); }
+    
+    /* Clickable Ticks for changing status */
+    .ticks { 
+      cursor: pointer; 
+      font-size: 13px; 
+      display: inline-flex; 
+      align-items: center; 
+      padding: 2px;
+    }
+    .ticks.state-single, .ticks.state-double-grey { color: rgba(255,255,255,0.6); }
+    .ticks.state-blue { color: var(--wa-blue-tick); }
 
     /* Link Preview */
     .link-preview { background-color: var(--wa-link-bg); border-radius: 8px; overflow: hidden; margin-bottom: 6px; cursor: pointer; display: flex; flex-direction: column; }
@@ -293,7 +302,7 @@
   </div>
 
   <script>
-    // --- Live Clock for Fake Status Bar ---
+    // --- Live Clock ---
     function updateClock() {
       const now = new Date();
       let hours = now.getHours();
@@ -317,9 +326,11 @@
     const profileImg = document.getElementById('profile-img');
     const profilePlaceholder = document.getElementById('profile-placeholder');
 
+    // Fix Send Button & Typing state
     msgInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
+        
         if (this.value.trim().length > 0) {
             btnIcon.className = "fas fa-paper-plane";
             sendBtn.classList.add("typing");
@@ -354,6 +365,26 @@
         }
     });
 
+    // Interactive Ticks Changer (Clicking ticks cycles through Single, Double Grey, Blue)
+    chatBox.addEventListener('click', (e) => {
+        const ticksEl = e.target.closest('.ticks');
+        if (!ticksEl) return;
+
+        if (ticksEl.classList.contains('state-single')) {
+            ticksEl.classList.remove('state-single');
+            ticksEl.classList.add('state-double-grey');
+            ticksEl.innerHTML = '<i class="fas fa-check-double"></i>';
+        } else if (ticksEl.classList.contains('state-double-grey')) {
+            ticksEl.classList.remove('state-double-grey');
+            ticksEl.classList.add('state-blue');
+            ticksEl.innerHTML = '<i class="fas fa-check-double"></i>';
+        } else {
+            ticksEl.classList.remove('state-blue');
+            ticksEl.classList.add('state-single');
+            ticksEl.innerHTML = '<i class="fas fa-check"></i>';
+        }
+    });
+
     sendBtn.addEventListener('click', async () => {
         const text = msgInput.value.trim();
         if (!text) return;
@@ -382,7 +413,7 @@
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(data.contents, "text/html");
                 
-                , ogImg = doc.querySelector('meta[property="og:image"]')?.content || doc.querySelector('meta[name="twitter:image"]')?.content; // wait, minor syntax cleanup
+                const ogImg = doc.querySelector('meta[property="og:image"]')?.content || doc.querySelector('meta[name="twitter:image"]')?.content;
                 let ogTitle = doc.querySelector('meta[property="og:title"]')?.content || doc.title || "Link Preview";
                 const domain = new URL(link).hostname;
 
@@ -415,22 +446,13 @@
                 <span class="msg-text">${formattedText}</span>
                 <div class="msg-meta">
                     <span class="time">${time}</span>
-                    <span class="ticks single"><i class="fas fa-check"></i></span>
+                    <span class="ticks state-single"><i class="fas fa-check"></i></span>
                 </div>
             </div>
         </div>`;
 
         chatBox.insertAdjacentHTML('beforeend', msgHTML);
         chatBox.scrollTop = chatBox.scrollHeight;
-        
-        setTimeout(() => {
-            const lastMsg = chatBox.lastElementChild;
-            const ticks = lastMsg.querySelector('.ticks');
-            if(ticks) {
-                ticks.classList.remove('single');
-                ticks.innerHTML = '<i class="fas fa-check-double"></i>';
-            }
-        }, 1500);
     });
   </script>
 </body>
