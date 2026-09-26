@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>WhatsApp Chat Clone</title>
-  <!-- FontAwesome Icons -->
+  <!-- FontAwesome Icons for basic UI -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
@@ -34,7 +34,6 @@
       display: flex; 
       flex-direction: column; 
       height: 100dvh; 
-      width: 100vw;
       color: var(--wa-text); 
       overflow: hidden; 
     }
@@ -49,6 +48,7 @@
       z-index: 10; 
       height: 60px; 
       flex-shrink: 0;
+      width: 100%;
     }
     .header-left { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
     .back-icon { color: var(--wa-text); font-size: 18px; cursor: pointer; padding-right: 4px; }
@@ -71,7 +71,7 @@
     
     /* Editable Header Name */
     .chat-name { 
-      font-size: 16px; 
+      font-size: 16.5px; 
       font-weight: 500; 
       color: var(--wa-text); 
       outline: none; 
@@ -81,15 +81,16 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+    
+    /* Updated Exact SVG Icons for Header */
     .header-right { 
       display: flex; 
       align-items: center; 
-      gap: 22px; 
+      gap: 24px; 
       color: var(--wa-text); 
-      font-size: 18px; 
       flex-shrink: 0;
     }
-    .header-right i { cursor: pointer; }
+    .header-right svg { cursor: pointer; }
 
     /* Main Chat Background */
     .chat-wrapper {
@@ -99,6 +100,7 @@
       flex-direction: column;
       background-color: var(--wa-bg);
       overflow: hidden;
+      width: 100%;
     }
 
     .chat-wrapper::before {
@@ -198,14 +200,14 @@
     /* Exact WhatsApp Bottom Input Area */
     .input-container { 
       background-color: transparent; 
-      padding: 8px; 
+      padding: 5px 8px; 
       display: flex; 
       align-items: flex-end; 
       gap: 8px; 
       z-index: 10;
       width: 100%;
       flex-shrink: 0;
-      padding-bottom: env(safe-area-inset-bottom, 8px);
+      padding-bottom: max(5px, env(safe-area-inset-bottom));
     }
     
     .input-box { 
@@ -235,13 +237,13 @@
     }
     .input-box textarea::placeholder { color: var(--wa-text-muted); font-size: 16px; }
     
-    /* Dedicated Mic/Send Circle Button - White Circle as requested */
+    /* Dedicated Mic/Send Circle Button - Exact Fit */
     .send-btn-circle { 
       width: 48px; 
       height: 48px; 
       border-radius: 50%; 
-      background-color: #ffffff; /* White circle background */
-      color: #111b21; /* Dark icon */
+      background-color: #ffffff; 
+      color: #111b21; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
@@ -249,12 +251,11 @@
       border: none; 
       cursor: pointer; 
       flex-shrink: 0; 
-      margin-bottom: 2px;
+      margin-bottom: 0px;
       box-shadow: 0 1px 2px rgba(0,0,0,0.2); 
       transition: background-color 0.2s, color 0.2s;
     }
     
-    /* When typing, turn button green for Send */
     .send-btn-circle.typing {
         background-color: var(--wa-green);
         color: #ffffff;
@@ -274,18 +275,27 @@
   <div class="header">
     <div class="header-left">
       <i class="fas fa-arrow-left back-icon"></i>
-      <!-- Clickable Profile Picture (Red badge removed) -->
       <div class="profile-container" onclick="document.getElementById('profile-upload').click()">
         <img src="" id="profile-img" class="profile-pic" style="display: none;">
         <div class="profile-pic" id="profile-placeholder"><i class="fas fa-user" style="font-size: 20px;"></i></div>
       </div>
-      <!-- Editable Name/Number -->
       <div class="chat-name" contenteditable="true" spellcheck="false">+91 63072 15940</div>
     </div>
+    
+    <!-- Exact WhatsApp SVGs for Video, Phone, and Menu -->
     <div class="header-right">
-      <i class="fas fa-video"></i>
-      <i class="fas fa-phone"></i>
-      <i class="fas fa-ellipsis-v" style="font-size: 19px; padding-right: 5px;"></i>
+      <!-- Video Call -->
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+      </svg>
+      <!-- Phone Call -->
+      <svg viewBox="0 0 24 24" width="21" height="21" fill="currentColor">
+        <path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"/>
+      </svg>
+      <!-- Ellipsis Menu -->
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+      </svg>
     </div>
   </div>
 
