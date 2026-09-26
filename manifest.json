@@ -1,19 +1,19 @@
 {
   "name": "WhatsApp Chat",
   "short_name": "WhatsApp",
-  "start_url": "https://nai-soch-chat.vercel.app/wa-chat.html",
+  "start_url": "/wa-chat.html",
   "display": "standalone",
   "background_color": "#0b141a",
   "theme_color": "#1f2c34",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/192px-WhatsApp.svg.png",
+      "src": "/icon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/512px-WhatsApp.svg.png",
+      "src": "/icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
