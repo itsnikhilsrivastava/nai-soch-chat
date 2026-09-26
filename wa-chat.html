@@ -2,16 +2,15 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>WhatsApp Chat Clone</title>
   <!-- FontAwesome Icons -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     :root {
       --wa-bg: #0b141a;
-      --wa-header: #202c33;
-      --wa-input-bg: #202c33;
-      --wa-input-box: #2a3942;
+      --wa-header: #1f2c34;
+      --wa-input-box: #1f2c34;
       --wa-msg-sent: #005c4b;
       --wa-text: #e9edef;
       --wa-text-muted: #8696a0;
@@ -22,7 +21,12 @@
       --wa-link-bg: #025144;
     }
     
-    body { 
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body, html { 
       font-family: 'Helvetica Neue', Helvetica, 'Segoe UI', Tahoma, Arial, sans-serif; 
       margin: 0; 
       padding: 0; 
@@ -30,6 +34,7 @@
       display: flex; 
       flex-direction: column; 
       height: 100dvh; 
+      width: 100vw;
       color: var(--wa-text); 
       overflow: hidden; 
     }
@@ -43,13 +48,13 @@
       justify-content: space-between; 
       z-index: 10; 
       height: 60px; 
-      box-sizing: border-box; 
+      flex-shrink: 0;
     }
-    .header-left { display: flex; align-items: center; gap: 8px; flex: 1; }
+    .header-left { display: flex; align-items: center; gap: 8px; flex: 1; overflow: hidden; }
     .back-icon { color: var(--wa-text); font-size: 18px; cursor: pointer; padding-right: 4px; }
     
     /* Editable Profile Picture */
-    .profile-container { position: relative; cursor: pointer; }
+    .profile-container { position: relative; cursor: pointer; flex-shrink: 0; }
     .profile-pic { 
       width: 40px; 
       height: 40px; 
@@ -63,25 +68,28 @@
       overflow: hidden; 
       object-fit: cover; 
     }
-    /* Business Badge */
-    .business-badge { 
-      position: absolute; 
-      bottom: -2px; 
-      right: -2px; 
-      width: 14px; 
-      height: 14px; 
-      background-color: #e91e63; 
-      border-radius: 50%; 
-      border: 2px solid var(--wa-header); 
-      display: flex; 
-      justify-content: center; 
-      align-items: center; 
-    }
-    .business-badge i { font-size: 8px; color: white; }
     
     /* Editable Header Name */
-    .chat-name { font-size: 16px; font-weight: 500; color: var(--wa-text); outline: none; padding: 2px; letter-spacing: 0.3px; }
-    .header-right { display: flex; align-items: center; gap: 22px; color: var(--wa-text); font-size: 18px; }
+    .chat-name { 
+      font-size: 16px; 
+      font-weight: 500; 
+      color: var(--wa-text); 
+      outline: none; 
+      padding: 2px; 
+      letter-spacing: 0.3px; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .header-right { 
+      display: flex; 
+      align-items: center; 
+      gap: 22px; 
+      color: var(--wa-text); 
+      font-size: 18px; 
+      flex-shrink: 0;
+    }
+    .header-right i { cursor: pointer; }
 
     /* Main Chat Background */
     .chat-wrapper {
@@ -99,8 +107,9 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
       background-repeat: repeat;
-      opacity: 0.06; /* Gives the exact dark WhatsApp pattern look */
+      opacity: 0.07; 
       z-index: 1;
+      pointer-events: none;
     }
 
     .chat-container { 
@@ -131,7 +140,7 @@
       padding: 8px 12px; 
       border-radius: 8px; 
       text-align: center; 
-      max-width: 85%; 
+      max-width: 90%; 
       margin-bottom: 8px; 
       line-height: 1.4; 
     }
@@ -169,7 +178,7 @@
     .link-title { font-weight: 500; font-size: 14px; margin-bottom: 4px; color: #fff; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
     .link-domain { font-size: 12px; color: #b1c1c8; display: flex; align-items: center; gap: 5px; }
     
-    .msg-text { margin-bottom: 2px; }
+    .msg-text { margin-bottom: 2px; display: inline-block; }
     .msg-text a { color: var(--wa-blue-tick); text-decoration: none; }
     .msg-text a:hover { text-decoration: underline; }
     
@@ -180,7 +189,7 @@
       gap: 4px; 
       margin-top: 4px; 
       margin-left: 10px;
-      margin-bottom: -4px; /* Pulls time to the bottom corner perfectly */
+      margin-bottom: -4px; 
     }
     .time { font-size: 11px; color: rgba(255,255,255,0.6); }
     .ticks { color: var(--wa-blue-tick); font-size: 13px; }
@@ -188,12 +197,15 @@
 
     /* Exact WhatsApp Bottom Input Area */
     .input-container { 
-      background-color: var(--wa-input-bg); 
-      padding: 6px 10px; 
+      background-color: transparent; 
+      padding: 8px; 
       display: flex; 
       align-items: flex-end; 
       gap: 8px; 
       z-index: 10;
+      width: 100%;
+      flex-shrink: 0;
+      padding-bottom: env(safe-area-inset-bottom, 8px);
     }
     
     .input-box { 
@@ -202,11 +214,10 @@
       border-radius: 24px; 
       display: flex; 
       align-items: flex-end; 
-      padding: 8px 12px; 
+      padding: 10px 12px; 
       min-height: 48px; 
-      box-sizing: border-box;
     }
-    .input-box i { color: var(--wa-text-muted); font-size: 22px; cursor: pointer; padding: 4px 6px; }
+    .input-box i { color: var(--wa-text-muted); font-size: 22px; cursor: pointer; padding: 2px 6px; }
     
     .input-box textarea { 
       flex: 1; 
@@ -215,21 +226,22 @@
       color: var(--wa-text); 
       font-size: 16px; 
       outline: none; 
-      padding: 5px 8px; 
+      padding: 2px 8px; 
       resize: none;
-      max-height: 100px;
+      max-height: 120px;
       font-family: inherit;
       line-height: 20px;
+      overflow-y: auto;
     }
     .input-box textarea::placeholder { color: var(--wa-text-muted); font-size: 16px; }
     
-    /* Dedicated Mic/Send Circle Button */
+    /* Dedicated Mic/Send Circle Button - White Circle as requested */
     .send-btn-circle { 
       width: 48px; 
       height: 48px; 
       border-radius: 50%; 
-      background-color: var(--wa-green); 
-      color: #111b21; /* Dark icon inside green button */
+      background-color: #ffffff; /* White circle background */
+      color: #111b21; /* Dark icon */
       display: flex; 
       justify-content: center; 
       align-items: center; 
@@ -237,6 +249,15 @@
       border: none; 
       cursor: pointer; 
       flex-shrink: 0; 
+      margin-bottom: 2px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2); 
+      transition: background-color 0.2s, color 0.2s;
+    }
+    
+    /* When typing, turn button green for Send */
+    .send-btn-circle.typing {
+        background-color: var(--wa-green);
+        color: #ffffff;
     }
     
     /* Loader for URL fetching */
@@ -253,18 +274,17 @@
   <div class="header">
     <div class="header-left">
       <i class="fas fa-arrow-left back-icon"></i>
-      <!-- Clickable Profile Picture -->
+      <!-- Clickable Profile Picture (Red badge removed) -->
       <div class="profile-container" onclick="document.getElementById('profile-upload').click()">
         <img src="" id="profile-img" class="profile-pic" style="display: none;">
         <div class="profile-pic" id="profile-placeholder"><i class="fas fa-user" style="font-size: 20px;"></i></div>
-        <div class="business-badge"><i class="fas fa-store"></i></div>
       </div>
       <!-- Editable Name/Number -->
       <div class="chat-name" contenteditable="true" spellcheck="false">+91 63072 15940</div>
     </div>
     <div class="header-right">
       <i class="fas fa-video"></i>
-      <i class="fas fa-phone-alt"></i>
+      <i class="fas fa-phone"></i>
       <i class="fas fa-ellipsis-v" style="font-size: 19px; padding-right: 5px;"></i>
     </div>
   </div>
@@ -306,18 +326,19 @@
     const profileImg = document.getElementById('profile-img');
     const profilePlaceholder = document.getElementById('profile-placeholder');
 
-    // Auto-resize textarea
+    // Auto-resize textarea & Toggle Button
     msgInput.addEventListener('input', function() {
         this.style.height = 'auto';
         this.style.height = (this.scrollHeight) + 'px';
         
-        // Toggle Mic and Send Icon
         if (this.value.trim().length > 0) {
             btnIcon.className = "fas fa-paper-plane";
+            sendBtn.classList.add("typing");
             attachIcon.style.display = "none";
             cameraIcon.style.display = "none";
         } else {
             btnIcon.className = "fas fa-microphone";
+            sendBtn.classList.remove("typing");
             attachIcon.style.display = "block";
             cameraIcon.style.display = "block";
             this.style.height = 'auto';
@@ -338,7 +359,7 @@
         }
     });
 
-    // Send on Enter (Prevent default new line behavior if shift isn't pressed)
+    // Send on Enter
     msgInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -354,6 +375,7 @@
         msgInput.value = "";
         msgInput.style.height = 'auto';
         btnIcon.className = "fas fa-microphone";
+        sendBtn.classList.remove("typing");
         attachIcon.style.display = "block";
         cameraIcon.style.display = "block";
 
@@ -415,7 +437,6 @@
         chatBox.insertAdjacentHTML('beforeend', msgHTML);
         chatBox.scrollTop = chatBox.scrollHeight;
         
-        // Simulate changing tick to double tick after a delay for realism
         setTimeout(() => {
             const lastMsg = chatBox.lastElementChild;
             const ticks = lastMsg.querySelector('.ticks');
@@ -425,7 +446,6 @@
             }
         }, 1500);
     });
-
   </script>
 </body>
 </html>
