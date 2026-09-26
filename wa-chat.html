@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   
-  <!-- PWA Absolute URLs (Fixes Install Issue) -->
-  <link rel="manifest" href="https://nai-soch-chat.vercel.app/manifest.json">
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#1f2c34">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -151,7 +151,7 @@
     .msg-text a { color: var(--wa-blue-tick); text-decoration: none; }
     .msg-text a:hover { text-decoration: underline; }
 
-    /* Bottom Input Area - Fixed for Mic Overflow */
+    /* Bottom Input Area */
     .input-container { 
       background-color: transparent; 
       padding: 5px 8px; 
@@ -165,8 +165,8 @@
     }
     
     .input-box { 
-      flex: 1; /* Takes remaining space */
-      min-width: 0; /* CRITICAL: Prevents pushing the mic button out */
+      flex: 1; 
+      min-width: 0; 
       background-color: var(--wa-input-box); 
       border-radius: 24px; 
       display: flex; 
@@ -178,7 +178,7 @@
     
     .input-box textarea { 
       flex: 1; 
-      min-width: 0; /* Ensures textarea doesn't overflow */
+      min-width: 0; 
       background: transparent; 
       border: none; 
       color: var(--wa-text); 
@@ -193,7 +193,6 @@
     }
     .input-box textarea::placeholder { color: var(--wa-text-muted); font-size: 16px; }
     
-    /* Mic/Send Button - Fixed */
     .send-btn-circle { 
       width: 48px; 
       height: 48px; 
@@ -206,7 +205,7 @@
       font-size: 20px; 
       border: none; 
       cursor: pointer; 
-      flex-shrink: 0; /* CRITICAL: Stops mic from getting squished or pushed */
+      flex-shrink: 0; 
       box-shadow: 0 1px 2px rgba(0,0,0,0.2); 
       transition: background-color 0.2s, color 0.2s;
     }
@@ -232,7 +231,6 @@
       <div class="chat-name" contenteditable="true" spellcheck="false">+91 63072 15940</div>
     </div>
     
-    <!-- Exact WhatsApp SVGs -->
     <div class="header-right">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
         <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
@@ -271,18 +269,21 @@
   </div>
 
   <script>
-    // --- 1. PWA Service Worker Registration (Absolute URL) ---
+    // --- PWA Service Worker Registration with Auto-Clear ---
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('https://nai-soch-chat.vercel.app/sw.js').then(reg => {
-          console.log('Service Worker Registered Successfully');
-        }).catch(err => {
-          console.log('Service Worker Failed:', err);
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for(let registration of registrations) {
+          registration.unregister();
+        }
+      }).then(() => {
+        let timeStamp = new Date().getTime();
+        navigator.serviceWorker.register('/sw.js?v=' + timeStamp).then(reg => {
+          console.log('Service Worker Registered');
         });
       });
     }
 
-    // --- 2. Chat Logic ---
+    // --- Chat Logic ---
     const msgInput = document.getElementById('msg-input');
     const sendBtn = document.getElementById('send-btn');
     const btnIcon = document.getElementById('btn-icon');
