@@ -7,14 +7,15 @@
   "theme_color": "#1f2c34",
   "icons": [
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
+      "src": "https://cdn-icons-png.flaticon.com/192/124/124034.png",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/png"
     },
     {
-      "src": "https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg",
+      "src": "https://cdn-icons-png.flaticon.com/512/124/124034.png",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
